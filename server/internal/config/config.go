@@ -64,6 +64,9 @@ type Config struct {
 	// Telegram (optional — empty disables Telegram notifications)
 	TelegramBotToken    string `envconfig:"TELEGRAM_BOT_TOKEN" default:""`
 	TelegramBotUsername string `envconfig:"TELEGRAM_BOT_USERNAME" default:"valtbot"`
+	// Required when TELEGRAM_BOT_TOKEN is set: registered as secret_token via
+	// SetWebhook and verified on every callback (fail-closed otherwise).
+	TelegramWebhookSecret string `envconfig:"TELEGRAM_WEBHOOK_SECRET" default:""`
 
 	// Zalo OA (optional — empty disables Zalo notifications)
 	ZaloOAToken string `envconfig:"ZALO_OA_TOKEN" default:""`

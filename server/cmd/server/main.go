@@ -131,12 +131,17 @@ func main() {
 	workflowHandler := workflow.NewHandler(workflowSvc, credMgr, leaseIssuer, vaultService, auditLogger, notifySvc, tokenStore, masterKey, pool)
 	revokeSvc := workflow.NewRevokeService(pool, dynSvc, credMgr, auditLogger)
 	slackWebhookHandler := notify.NewSlackWebhookHandler(cfg.SlackSigningSecret, workflowHandler, slackAdapter)
-	telegramWebhookHandler := notify.NewTelegramWebhookHandler(telegramAdapter, channelStore, pool, workflowHandler, cfg.TelegramBotUsername)
+	telegramWebhookHandler := notify.NewTelegramWebhookHandler(telegramAdapter, channelStore, pool, workflowHandler, cfg.TelegramBotUsername, cfg.TelegramWebhookSecret)
 
-	// Auto-register Telegram webhook on startup (idempotent)
+	// Auto-register Telegram webhook on startup (idempotent). The webhook
+	// secret is mandatory when a bot token is configured: callbacks without
+	// it are rejected, so refusing to start beats silently broken approvals.
 	if telegramAdapter != nil && cfg.BaseURL != "" {
+		if cfg.TelegramWebhookSecret == "" {
+			log.Fatal("TELEGRAM_WEBHOOK_SECRET must be set when TELEGRAM_BOT_TOKEN is configured; webhook callbacks are rejected without it")
+		}
 		webhookURL := cfg.BaseURL + "/api/v1/webhooks/telegram"
-		if err := telegramAdapter.SetWebhook(context.Background(), webhookURL); err != nil {
+		if err := telegramAdapter.SetWebhook(context.Background(), webhookURL, cfg.TelegramWebhookSecret); err != nil {
 			log.Printf("Warning: failed to register Telegram webhook: %v", err)
 		} else {
 			log.Printf("Telegram webhook registered: %s", webhookURL)

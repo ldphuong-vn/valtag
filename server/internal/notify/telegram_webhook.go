@@ -3,6 +3,7 @@ package notify
 import (
 	"context"
 	"crypto/rand"
+	"crypto/subtle"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -12,23 +13,31 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// telegramSecretHeader is the header Telegram uses to present the secret_token
+// registered via SetWebhook on every webhook update it pushes.
+const telegramSecretHeader = "X-Telegram-Bot-Api-Secret-Token"
+
 // TelegramWebhookHandler handles Telegram Update callbacks.
 type TelegramWebhookHandler struct {
-	telegram    *TelegramAdapter
-	channels    *ChannelStore
-	pool        *pgxpool.Pool
-	approver    SlackApprover // reuse same interface — ApproveBySystem/RejectBySystem
-	botUsername string
+	telegram      *TelegramAdapter
+	channels      *ChannelStore
+	pool          *pgxpool.Pool
+	approver      SlackApprover // reuse same interface — ApproveBySystem/RejectBySystem
+	botUsername   string
+	webhookSecret string
 }
 
-// NewTelegramWebhookHandler creates a TelegramWebhookHandler.
-func NewTelegramWebhookHandler(telegram *TelegramAdapter, channels *ChannelStore, pool *pgxpool.Pool, approver SlackApprover, botUsername string) *TelegramWebhookHandler {
+// NewTelegramWebhookHandler creates a TelegramWebhookHandler. webhookSecret is
+// the value sent as secret_token in SetWebhook; Handle rejects updates that
+// fail to present it.
+func NewTelegramWebhookHandler(telegram *TelegramAdapter, channels *ChannelStore, pool *pgxpool.Pool, approver SlackApprover, botUsername, webhookSecret string) *TelegramWebhookHandler {
 	return &TelegramWebhookHandler{
-		telegram:    telegram,
-		channels:    channels,
-		pool:        pool,
-		approver:    approver,
-		botUsername: botUsername,
+		telegram:      telegram,
+		channels:      channels,
+		pool:          pool,
+		approver:      approver,
+		botUsername:   botUsername,
+		webhookSecret: webhookSecret,
 	}
 }
 
@@ -52,8 +61,15 @@ type telegramUpdate struct {
 	} `json:"callback_query"`
 }
 
-// Handle processes POST /api/v1/webhooks/telegram.
+// Handle processes POST /api/v1/webhooks/telegram. Every update must present
+// the webhook secret registered via SetWebhook; unauthenticated updates are
+// rejected before any processing (fail-closed).
 func (h *TelegramWebhookHandler) Handle(w http.ResponseWriter, r *http.Request) {
+	if !h.verifySecret(r) {
+		http.Error(w, "invalid secret", http.StatusUnauthorized)
+		return
+	}
+
 	var update telegramUpdate
 	if err := json.NewDecoder(r.Body).Decode(&update); err != nil {
 		w.WriteHeader(http.StatusOK) // always 200 to Telegram
@@ -95,6 +111,16 @@ func (h *TelegramWebhookHandler) Handle(w http.ResponseWriter, r *http.Request) 
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+// verifySecret compares the presented secret against the configured value in
+// constant time. Fails closed when no secret is configured.
+func (h *TelegramWebhookHandler) verifySecret(r *http.Request) bool {
+	if h.webhookSecret == "" {
+		return false
+	}
+	presented := r.Header.Get(telegramSecretHeader)
+	return subtle.ConstantTimeCompare([]byte(presented), []byte(h.webhookSecret)) == 1
 }
 
 // handleLinkToken validates the link token and upserts the Telegram channel for the user.

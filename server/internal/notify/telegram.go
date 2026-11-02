@@ -61,11 +61,17 @@ func (t *TelegramAdapter) AnswerCallbackQuery(ctx context.Context, callbackID, t
 	return t.post(ctx, "answerCallbackQuery", payload)
 }
 
-// SetWebhook registers the Telegram webhook URL. Idempotent — Telegram overwrites existing webhook.
-func (t *TelegramAdapter) SetWebhook(ctx context.Context, webhookURL string) error {
+// SetWebhook registers the Telegram webhook URL together with a secret_token:
+// Telegram then presents it in the X-Telegram-Bot-Api-Secret-Token header on
+// every pushed update, and the webhook handler rejects updates without it.
+// Idempotent — Telegram overwrites existing webhook.
+func (t *TelegramAdapter) SetWebhook(ctx context.Context, webhookURL, secretToken string) error {
 	payload := map[string]interface{}{
 		"url":             webhookURL,
 		"allowed_updates": []string{"message", "callback_query"},
+	}
+	if secretToken != "" {
+		payload["secret_token"] = secretToken
 	}
 	return t.post(ctx, "setWebhook", payload)
 }
