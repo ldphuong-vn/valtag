@@ -15,7 +15,6 @@ import (
 type TOTPHandler struct {
 	store  *TOTPStore
 	jwtMgr *JWTManager
-	pool   interface{ QueryRow(ctx interface{}, sql string, args ...interface{}) interface{} } // unused, kept for future
 }
 
 // NewTOTPHandler creates a TOTPHandler.
@@ -36,9 +35,12 @@ func (h *TOTPHandler) Setup(w http.ResponseWriter, r *http.Request) {
 
 	// Get user email for TOTP account name
 	var email string
-	h.store.pool.QueryRow(r.Context(),
+	if scanErr := h.store.pool.QueryRow(r.Context(),
 		`SELECT email FROM users WHERE id = $1`, userID,
-	).Scan(&email)
+	).Scan(&email); scanErr != nil {
+		apierror.InternalError(w, "failed to load user for 2FA setup")
+		return
+	}
 
 	key, err := totp.Generate(totp.GenerateOpts{
 		Issuer:      "Valt",
@@ -55,7 +57,7 @@ func (h *TOTPHandler) Setup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
+	_ = json.NewEncoder(w).Encode(map[string]string{ // status not yet written; Encode failure falls back to empty 200
 		"secret": key.Secret(),
 		"qr_uri": key.URL(),
 	})
@@ -97,7 +99,7 @@ func (h *TOTPHandler) Verify(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
+	_ = json.NewEncoder(w).Encode(map[string]interface{}{ // status not yet written; Encode failure falls back to empty 200
 		"enabled":      true,
 		"backup_codes": codes,
 	})
@@ -151,7 +153,7 @@ func (h *TOTPHandler) RegenerateBackup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{"backup_codes": codes})
+	_ = json.NewEncoder(w).Encode(map[string]interface{}{"backup_codes": codes}) // status not yet written; Encode failure falls back to empty 200
 }
 
 // Validate checks a TOTP code during login. POST /auth/totp/validate
@@ -202,7 +204,7 @@ func (h *TOTPHandler) Validate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(authResponse{
+	_ = json.NewEncoder(w).Encode(authResponse{ // status not yet written; Encode failure falls back to empty 200
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		ExpiresIn:    900,

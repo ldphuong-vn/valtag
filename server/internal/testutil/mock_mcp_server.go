@@ -86,7 +86,7 @@ func NewMockMCPServer() *MockMCPServer {
 			resp, err := m.responseHandler(r)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+				_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 				return
 			}
 			for k, vv := range resp.Header {
@@ -95,7 +95,7 @@ func NewMockMCPServer() *MockMCPServer {
 				}
 			}
 			w.WriteHeader(resp.StatusCode)
-			bytes.NewReader(bodyBytes).WriteTo(w)
+			_, _ = bytes.NewReader(bodyBytes).WriteTo(w)
 			return
 		}
 
@@ -104,7 +104,7 @@ func NewMockMCPServer() *MockMCPServer {
 		if err := json.Unmarshal(bodyBytes, &mcpReq); err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(MCPResponsePayload{
+			_ = json.NewEncoder(w).Encode(MCPResponsePayload{
 				JSONRPC: "2.0",
 				ID:      nil,
 				Error: &MCPError{
@@ -119,7 +119,7 @@ func NewMockMCPServer() *MockMCPServer {
 		response := m.handleMCPMethod(r.Context(), mcpReq)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode(response)
 	}))
 
 	return m

@@ -331,11 +331,10 @@ func bearerTokenFrom(header string) string {
 // derivedKeyFromAuthorization returns the derived API key from the
 // Authorization header if one is present, otherwise "".
 func derivedKeyFromAuthorization(r *http.Request) string {
-	header := r.Header.Get("Authorization")
-	if strings.HasPrefix(header, "Bearer ") {
-		header = strings.TrimPrefix(header, "Bearer ")
+	header := strings.TrimSpace(strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer "))
+	if strings.HasPrefix(header, dynsecret.DerivedKeyPrefix) {
+		return header
 	}
-	header = strings.TrimSpace(header)
 	if strings.HasPrefix(header, dynsecret.DerivedKeyPrefix) {
 		return header
 	}

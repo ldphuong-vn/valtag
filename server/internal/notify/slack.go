@@ -125,7 +125,7 @@ func (s *SlackAdapter) post(ctx context.Context, token, url string, payload inte
 		OK    bool   `json:"ok"`
 		Error string `json:"error"`
 	}
-	json.NewDecoder(resp.Body).Decode(&result)
+	_ = json.NewDecoder(resp.Body).Decode(&result) // decode failure leaves OK=false → error path below
 	if !result.OK {
 		return fmt.Errorf("slack error: %s", result.Error)
 	}

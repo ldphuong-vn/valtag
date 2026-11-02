@@ -1,0 +1,21 @@
+run:
+  timeout: 5m
+
+linters:
+  enable:
+    - govet
+    - errcheck
+    - staticcheck
+    - unused
+    - gosimple
+    - ineffassign
+    - typecheck
+  disable:
+    - funlen
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+  govet:
+    enable:
+      - shadow

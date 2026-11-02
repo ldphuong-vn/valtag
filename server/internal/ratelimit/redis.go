@@ -49,8 +49,11 @@ func (l *RedisLimiter) Allow(ctx context.Context, agentID string, rpm int) (bool
 		return true, fmt.Errorf("redis error: %w", err)
 	}
 
-	count := cmds[2].(*redis.IntCmd).Val()
-	return count <= int64(rpm), nil
+	intCmd, ok := cmds[2].(*redis.IntCmd)
+	if !ok {
+		return true, fmt.Errorf("unexpected redis reply for ZCard")
+	}
+	return intCmd.Val() <= int64(rpm), nil
 }
 
 // Close closes the Redis connection.

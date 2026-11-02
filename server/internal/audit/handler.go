@@ -92,9 +92,8 @@ func (h *Handler) exportCSV(w http.ResponseWriter, r *http.Request) {
 		}
 		query += fmt.Sprintf(" AND event_time <= $%d", argIdx)
 		args = append(args, end)
-		argIdx++
 	}
-	query += fmt.Sprintf(" ORDER BY seq ASC NULLS LAST")
+	query += " ORDER BY seq ASC NULLS LAST"
 
 	rows, err := h.pool.Query(r.Context(), query, args...)
 	if err != nil {

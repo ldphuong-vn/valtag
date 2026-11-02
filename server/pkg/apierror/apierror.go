@@ -17,7 +17,9 @@ type errorResponse struct {
 func Write(w http.ResponseWriter, statusCode int, code, message string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(errorResponse{
+	// Nothing left to do if the client has already gone or the response
+	// fails to encode — the status code above is already sent.
+	_ = json.NewEncoder(w).Encode(errorResponse{
 		Error: APIError{Code: code, Message: message},
 	})
 }

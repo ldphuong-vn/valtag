@@ -70,7 +70,7 @@ func (s *Service) NotifyApprovalNeeded(ctx context.Context, ownerUserID, to, req
 	if s.channels != nil && ownerUserID != "" {
 		if telegramHandle, chErr := s.channels.GetPreferred(ctx, ownerUserID, "telegram"); chErr == nil && telegramHandle != "" {
 			var chatID int64
-			fmt.Sscan(telegramHandle, &chatID)
+			_, _ = fmt.Sscan(telegramHandle, &chatID) // parse failure leaves chatID 0, skipped below
 			if chatID != 0 {
 				payload := map[string]interface{}{"chat_id": chatID, "request_id": requestID, "secret_name": secretName, "requester": requester, "reason": reason}
 				if s.jobStore != nil {

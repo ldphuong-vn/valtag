@@ -54,7 +54,7 @@ func (h *SlackWebhookHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		Channel struct{ ID string `json:"id"` } `json:"channel"`
 		Message struct{ Ts string `json:"ts"` } `json:"message"`
 	}
-	json.Unmarshal([]byte(vals.Get("payload")), &payload)
+	_ = json.Unmarshal([]byte(vals.Get("payload")), &payload) // empty payload → no actions → handled below
 
 	if len(payload.Actions) == 0 {
 		w.WriteHeader(http.StatusOK)

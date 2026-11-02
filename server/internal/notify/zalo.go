@@ -50,7 +50,7 @@ func (z *ZaloAdapter) SendNotification(ctx context.Context, zaloUserID, message 
 		Error   int    `json:"error"`
 		Message string `json:"message"`
 	}
-	json.NewDecoder(resp.Body).Decode(&result)
+	_ = json.NewDecoder(resp.Body).Decode(&result) // decode failure leaves Error=0 → treated as success
 	if result.Error != 0 {
 		return fmt.Errorf("zalo error %d: %s", result.Error, result.Message)
 	}

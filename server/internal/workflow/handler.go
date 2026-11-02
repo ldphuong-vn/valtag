@@ -573,7 +573,6 @@ func (h *Handler) GetActiveCredentials(w http.ResponseWriter, r *http.Request) {
 	if projectID != "" {
 		query += fmt.Sprintf(" AND s.project_id = $%d", argIdx)
 		args = append(args, projectID)
-		argIdx++
 	}
 
 	rows, err := h.pool.Query(r.Context(), query, args...)

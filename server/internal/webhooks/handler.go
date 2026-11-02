@@ -44,7 +44,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(wh)
+	_ = json.NewEncoder(w).Encode(wh) // status already sent; nothing to recover
 }
 
 // List handles GET /orgs/{org_id}/webhooks.
@@ -56,7 +56,7 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{"webhooks": whs})
+	_ = json.NewEncoder(w).Encode(map[string]interface{}{"webhooks": whs}) // status not yet written; Encode failure falls back to empty 200
 }
 
 // Delete handles DELETE /orgs/{org_id}/webhooks/{id}.

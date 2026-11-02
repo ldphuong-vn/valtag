@@ -295,7 +295,7 @@ func TestE2EParameterValidation(t *testing.T) {
 				if err != nil {
 					t.Errorf("unexpected error: %v", err)
 				}
-				if params.MaxDurationMinutes == 0 && tc.params["max_duration_minutes"].(int) != 0 {
+				if raw, ok := tc.params["max_duration_minutes"].(int); ok && params.MaxDurationMinutes == 0 && raw != 0 {
 					t.Errorf("parameter not set correctly")
 				}
 			}

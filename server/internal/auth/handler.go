@@ -250,7 +250,7 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{ // status not yet written; Encode failure falls back to empty 200
 			"requires_totp": true,
 			"totp_token":    totpToken,
 		})
