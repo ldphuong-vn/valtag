@@ -19,10 +19,12 @@ import (
 
 // RevokeSummary reports what one revoke-all run killed.
 type RevokeSummary struct {
-	LeasesRevoked   int `json:"leases_revoked"`
-	SessionsRevoked int `json:"sessions_revoked"`
-	TokensRevoked   int `json:"agent_tokens_revoked"`
-	AgentsDisabled  int `json:"agents_disabled"`
+	LeasesRevoked         int  `json:"leases_revoked"`
+	SessionsRevoked       int  `json:"sessions_revoked"`
+	TokensRevoked         int  `json:"agent_tokens_revoked"`
+	AgentsDisabled        int  `json:"agents_disabled"`
+	RefreshTokensRevoked  int  `json:"refresh_tokens_revoked"`
+	CLISessionsKilled     bool `json:"cli_sessions_killed"`
 }
 
 // RevokeService implements the week 9-10 revoke cascade: one command kills
@@ -83,6 +85,22 @@ func (s *RevokeService) RevokeAllForUser(ctx context.Context, targetUserID, acto
 		targetUserID); err != nil {
 		return nil, fmt.Errorf("revoking access requests: %w", err)
 	}
+
+	// 5. Human access dies too (report §3.2: revoke-all previously left web
+	// sessions and 30-day CLI JWTs alive). Web refresh tokens are deleted
+	// outright; CLI/MCP JWTs embed a ver claim that stops matching after the
+	// token_version bump.
+	tag, err := s.pool.Exec(ctx, `DELETE FROM refresh_tokens WHERE user_id = $1`, targetUserID)
+	if err != nil {
+		return nil, fmt.Errorf("revoking refresh tokens: %w", err)
+	}
+	summary.RefreshTokensRevoked = int(tag.RowsAffected())
+
+	if _, err := s.pool.Exec(ctx,
+		`UPDATE users SET token_version = token_version + 1 WHERE id = $1`, targetUserID); err != nil {
+		return nil, fmt.Errorf("invalidating CLI tokens: %w", err)
+	}
+	summary.CLISessionsKilled = true
 
 	if s.auditLog != nil {
 		meta, _ := json.Marshal(summary)

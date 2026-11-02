@@ -123,9 +123,17 @@ func (h *Handler) googleCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// If CLI session cookie present, issue a long-lived CLI token (30 days) and
-	// store it so the CLI can poll for it.
+	// store it so the CLI can poll for it. The token embeds the user's current
+	// token_version so revoke-all can invalidate it.
 	if cliSessionCookie, cookieErr := r.Cookie("cli_session"); cookieErr == nil && cliSessionCookie.Value != "" {
-		cliToken, cliErr := h.jwtMgr.GenerateCLIToken(userID)
+		var tokenVersion int
+		if verErr := h.pool.QueryRow(r.Context(),
+			`SELECT token_version FROM users WHERE id = $1`, userID).Scan(&tokenVersion); verErr != nil {
+			log.Printf("oauth: read token_version: %v", verErr)
+			http.Error(w, "token issuance failed", http.StatusInternalServerError)
+			return
+		}
+		cliToken, cliErr := h.jwtMgr.GenerateCLIToken(userID, tokenVersion)
 		if cliErr != nil {
 			log.Printf("oauth: generate cli token: %v", cliErr)
 			http.Error(w, "token issuance failed", http.StatusInternalServerError)

@@ -283,7 +283,7 @@ func main() {
 		// Dual-auth routes: accept either user JWT or agent bearer token
 		// These routes allow both users and AI agents to read/list data
 		r.Group(func(r chi.Router) {
-			r.Use(dualAuthMiddleware(jwtMgr, agentSvc))
+			r.Use(dualAuthMiddleware(pool, jwtMgr, agentSvc))
 			r.Use(apiLimiter.Middleware())
 			if agentRateLimiter != nil {
 				r.Use(agentRateLimiter.Middleware(60))
@@ -303,7 +303,7 @@ func main() {
 
 		// JWT-only authenticated routes: for write operations and user-specific operations
 		r.Group(func(r chi.Router) {
-			r.Use(auth.AuthMiddleware(jwtMgr))
+			r.Use(auth.AuthMiddleware(pool, jwtMgr))
 			r.Use(apiLimiter.Middleware())
 			if agentRateLimiter != nil {
 				r.Use(agentRateLimiter.Middleware(60))
@@ -425,7 +425,7 @@ func main() {
 	log.Println("Server stopped")
 }
 
-func dualAuthMiddleware(jwtMgr *auth.JWTManager, agentSvc *agent.Service) func(http.Handler) http.Handler {
+func dualAuthMiddleware(pool *pgxpool.Pool, jwtMgr *auth.JWTManager, agentSvc *agent.Service) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			authHeader := r.Header.Get("Authorization")
@@ -440,8 +440,9 @@ func dualAuthMiddleware(jwtMgr *auth.JWTManager, agentSvc *agent.Service) func(h
 			}
 			token := parts[1]
 
-			// Try JWT first (no DB lookup)
-			if userID, err := jwtMgr.ValidateAccessToken(token); err == nil {
+			// Try JWT first. CLI tokens get their ver claim checked against
+			// users.token_version here too; access tokens stay DB-free.
+			if userID, err := auth.ValidateUserToken(r.Context(), pool, jwtMgr, token); err == nil {
 				ctx := auth.WithUserID(r.Context(), userID)
 				next.ServeHTTP(w, r.WithContext(ctx))
 				return

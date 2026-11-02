@@ -11,7 +11,7 @@ func TestAuthMiddleware_NoHeader(t *testing.T) {
 	privPEM, pubPEM := generateTestKeys(t)
 	mgr, _ := NewJWTManager(privPEM, pubPEM)
 	called := false
-	handler := AuthMiddleware(mgr)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := AuthMiddleware(nil, mgr)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		called = true
 	}))
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
@@ -28,7 +28,7 @@ func TestAuthMiddleware_NoHeader(t *testing.T) {
 func TestAuthMiddleware_InvalidFormat(t *testing.T) {
 	privPEM, pubPEM := generateTestKeys(t)
 	mgr, _ := NewJWTManager(privPEM, pubPEM)
-	handler := AuthMiddleware(mgr)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	handler := AuthMiddleware(nil, mgr)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	req.Header.Set("Authorization", "Token abc123") // wrong scheme
 	rec := httptest.NewRecorder()
@@ -41,7 +41,7 @@ func TestAuthMiddleware_InvalidFormat(t *testing.T) {
 func TestAuthMiddleware_InvalidToken(t *testing.T) {
 	privPEM, pubPEM := generateTestKeys(t)
 	mgr, _ := NewJWTManager(privPEM, pubPEM)
-	handler := AuthMiddleware(mgr)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	handler := AuthMiddleware(nil, mgr)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	req.Header.Set("Authorization", "Bearer invalidtoken")
 	rec := httptest.NewRecorder()
@@ -55,7 +55,7 @@ func TestAuthMiddleware_ValidToken(t *testing.T) {
 	privPEM, pubPEM := generateTestKeys(t)
 	mgr, _ := NewJWTManager(privPEM, pubPEM)
 	var gotUserID string
-	handler := AuthMiddleware(mgr)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := AuthMiddleware(nil, mgr)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotUserID = UserIDFromContext(r.Context())
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -84,7 +84,7 @@ func TestUserIDFromContext_WithValue(t *testing.T) {
 	mgr, _ := NewJWTManager(privPEM, pubPEM)
 	token, _ := mgr.GenerateAccessToken("stored-user")
 	var extractedID string
-	handler := AuthMiddleware(mgr)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := AuthMiddleware(nil, mgr)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		extractedID = UserIDFromContext(r.Context())
 	}))
 	req := httptest.NewRequest(http.MethodGet, "/", nil)

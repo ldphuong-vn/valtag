@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+
 	"github.com/valt-dev/valt/server/pkg/apierror"
 )
 
@@ -12,7 +14,11 @@ type contextKey string
 
 const userIDKey contextKey = "userID"
 
-func AuthMiddleware(jwtMgr *JWTManager) func(http.Handler) http.Handler {
+// AuthMiddleware requires a valid user JWT. CLI tokens (typ=cli, 30 days)
+// additionally have their ver claim checked against users.token_version, so
+// revoke-all kills them immediately; access tokens stay DB-free.
+// db may be nil only in unit tests that never present CLI tokens.
+func AuthMiddleware(db *pgxpool.Pool, jwtMgr *JWTManager) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			authHeader := r.Header.Get("Authorization")
@@ -27,7 +33,7 @@ func AuthMiddleware(jwtMgr *JWTManager) func(http.Handler) http.Handler {
 				return
 			}
 
-			userID, err := jwtMgr.ValidateAccessToken(parts[1])
+			userID, err := ValidateUserToken(r.Context(), db, jwtMgr, parts[1])
 			if err != nil {
 				apierror.Unauthorized(w, "invalid or expired token")
 				return

@@ -110,7 +110,7 @@ func (h *Handler) Routes() chi.Router {
 	}
 	// Authenticated routes (require Bearer token).
 	r.Group(func(r chi.Router) {
-		r.Use(AuthMiddleware(h.jwtMgr))
+		r.Use(AuthMiddleware(h.pool, h.jwtMgr))
 		r.Post("/resend-verification", h.resendVerification)
 		r.Get("/me", h.getMe)
 	})
