@@ -17,7 +17,23 @@ api.{$DOMAIN} {
 }
 
 app.{$DOMAIN} {
-	reverse_proxy dashboard:3000
+	# API on the dashboard origin — the browser calls /api/v1/* same-origin
+	# (CSP connect-src 'self'), so these must reach the server, not the
+	# dashboard. Without this branch browser login broke on prod domains
+	# (graphify report §3.2).
+	handle /api/* {
+		reverse_proxy server:8080
+	}
+	handle /webhooks/* {
+		reverse_proxy server:8080
+	}
+	handle /oauth/* {
+		reverse_proxy server:8080
+	}
+
+	handle {
+		reverse_proxy dashboard:3000
+	}
 
 	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
