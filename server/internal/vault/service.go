@@ -128,21 +128,36 @@ func (s *Service) CreateSecret(ctx context.Context, userID string, input CreateS
 	return &secret, nil
 }
 
-func (s *Service) ListSecrets(ctx context.Context, userID string, page, limit, offset int) (*ListResult, error) {
+func (s *Service) ListSecrets(ctx context.Context, userID, name, projectID string, page, limit, offset int) (*ListResult, error) {
+	// Optional exact-match filters (name, project_id) — `valt get <name>`
+	// relies on them; the server previously ignored both, so the CLI could
+	// act on the wrong secret.
+	filter := ""
+	args := []interface{}{userID}
+	if name != "" {
+		args = append(args, name)
+		filter += fmt.Sprintf(" AND name = $%d", len(args))
+	}
+	if projectID != "" {
+		args = append(args, projectID)
+		filter += fmt.Sprintf(" AND project_id = $%d", len(args))
+	}
+
 	var total int
 	err := s.pool.QueryRow(ctx,
-		`SELECT COUNT(*) FROM secrets WHERE user_id = $1 AND deleted_at IS NULL`,
-		userID,
+		`SELECT COUNT(*) FROM secrets WHERE user_id = $1 AND deleted_at IS NULL`+filter,
+		args...,
 	).Scan(&total)
 	if err != nil {
 		return nil, fmt.Errorf("counting secrets: %w", err)
 	}
 
+	args = append(args, limit, offset)
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, user_id, name, description, credential_type, source, version, policy, created_at, updated_at
-		 FROM secrets WHERE user_id = $1 AND deleted_at IS NULL
-		 ORDER BY created_at DESC LIMIT $2 OFFSET $3`,
-		userID, limit, offset,
+		 FROM secrets WHERE user_id = $1 AND deleted_at IS NULL`+filter+
+			fmt.Sprintf(" ORDER BY created_at DESC LIMIT $%d OFFSET $%d", len(args)-1, len(args)),
+		args...,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("querying secrets: %w", err)

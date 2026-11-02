@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/valt-dev/valt/server/internal/agent"
@@ -379,14 +380,64 @@ func (h *Handler) Reject(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetCredential handles GET /credentials/{request_id}
+// GetCredential handles GET /credentials/{request_id}.
 func (h *Handler) GetCredential(w http.ResponseWriter, r *http.Request) {
-	userID := auth.UserIDFromContext(r.Context())
 	requestID := chi.URLParam(r, "request_id")
-
 	if _, err := validator.ValidateUUID(requestID); err != nil {
 		apierror.BadRequest(w, "invalid request_id")
 		return
 	}
+	h.getCredentialForRequest(w, r, requestID)
+}
+
+// GetCredentialBySecret handles GET /credentials/by-secret/{secret_id}:
+// delivers the caller's most recent active credential for that secret, so
+// `valt get <name>` reuses an approved session instead of minting a new
+// access request on every run.
+func (h *Handler) GetCredentialBySecret(w http.ResponseWriter, r *http.Request) {
+	secretID := chi.URLParam(r, "secret_id")
+	if _, err := validator.ValidateUUID(secretID); err != nil {
+		apierror.BadRequest(w, "invalid secret_id")
+		return
+	}
+
+	userID := auth.UserIDFromContext(r.Context())
+	agentID := agent.AgentIDFromContext(r.Context())
+	if userID == "" && agentID == "" {
+		apierror.Unauthorized(w, "authentication required")
+		return
+	}
+
+	var requestID string
+	err := h.pool.QueryRow(r.Context(), `
+		SELECT ar.id
+		FROM access_requests ar
+		JOIN credential_sessions cs ON cs.access_request_id = ar.id
+		WHERE ar.secret_id = $1
+		  AND cs.status = 'active' AND cs.expires_at > NOW()
+		  AND (($2 <> '' AND ar.requester_user_id = $2) OR ($3 <> '' AND ar.ai_agent_id::text = $3))
+		ORDER BY cs.created_at DESC
+		LIMIT 1`,
+		secretID, userID, agentID,
+	).Scan(&requestID)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			apierror.NotFound(w, "no active credential for this secret")
+			return
+		}
+		log.Printf("Failed to find active credential by secret %s: %v", secretID, err)
+		apierror.InternalError(w, "failed to find active credential")
+		return
+	}
+
+	h.getCredentialForRequest(w, r, requestID)
+}
+
+// getCredentialForRequest delivers the credential for an access request the
+// caller owns: lease-backed sessions resolve lease credentials; static
+// secrets are decrypted on delivery and single-use policies auto-revoke.
+func (h *Handler) getCredentialForRequest(w http.ResponseWriter, r *http.Request, requestID string) {
+	userID := auth.UserIDFromContext(r.Context())
 
 	// Verify the requester owns this request
 	req, err := h.service.GetRequestByID(r.Context(), requestID)

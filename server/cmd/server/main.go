@@ -297,6 +297,7 @@ func main() {
 			r.Post("/secrets/{secret_id}/access-requests", workflowHandler.CreateRequest)
 			r.Get("/access-requests/{request_id}", workflowHandler.GetRequest)
 			r.Get("/credentials/active", workflowHandler.GetActiveCredentials)
+			r.Get("/credentials/by-secret/{secret_id}", workflowHandler.GetCredentialBySecret)
 			r.Get("/credentials/{request_id}", workflowHandler.GetCredential)
 			r.Post("/credentials/{request_id}/revoke", workflowHandler.RevokeCredential)
 		})

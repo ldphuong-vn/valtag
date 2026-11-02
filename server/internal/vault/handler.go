@@ -180,13 +180,16 @@ func (h *Handler) ListSecrets(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	name := r.URL.Query().Get("name")
+	projectID := r.URL.Query().Get("project_id")
+
 	var result *ListResult
 	if agentID != "" {
 		// Agent path: list secrets from agent's accessible projects
 		result, err = h.service.ListSecretsForAgent(r.Context(), agentID, pg.Page, pg.Limit, pg.Offset)
 	} else {
-		// User path: list owned secrets
-		result, err = h.service.ListSecrets(r.Context(), userID, pg.Page, pg.Limit, pg.Offset)
+		// User path: list owned secrets, honoring the exact-match filters
+		result, err = h.service.ListSecrets(r.Context(), userID, name, projectID, pg.Page, pg.Limit, pg.Offset)
 	}
 
 	if err != nil {
