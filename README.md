@@ -1,6 +1,6 @@
 # valtag — the ask-first credential gate for AI agents
 
-[![CI/CD](https://github.com/ldphuong-vn/vaultsaas/actions/workflows/ci.yml/badge.svg)](https://github.com/ldphuong-vn/vaultsaas/actions/workflows/ci.yml)
+[![CI/CD](https://github.com/ldphuong-vn/valtag/actions/workflows/ci.yml/badge.svg)](https://github.com/ldphuong-vn/valtag/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 Your AI agent needs an API key. Today you paste a long-lived production key into its config — and it stays there, forever, on every machine the agent runs on, with no record of what the agent did with it.
@@ -57,7 +57,7 @@ One server, three ways to consume credentials:
 **1. Run the server** (Docker, self-hosted — no cloud dependency):
 
 ```bash
-git clone https://github.com/ldphuong-vn/vaultsaas.git
+git clone https://github.com/ldphuong-vn/valtag.git
 cd vaultsaas
 cp .env.example .env
 docker compose up -d

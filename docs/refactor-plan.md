@@ -66,7 +66,7 @@ giữ migration DB nguyên (không phá dữ liệu người dùng cũ).
 
 - [x] 2026-08-31: dọn binary khỏi repo (server.exe, valt-cli.exe ~36MB,
   repomix-output.xml, tsbuildinfo) + rule .gitignore (commit 2796380).
-- [x] 2026-09-03: transfer repo → `ldphuong-vn/vaultsaas`; redirect URL cũ hoạt động.
+- [x] 2026-09-03: transfer repo → `ldphuong-vn/valtag`; redirect URL cũ hoạt động.
 - [x] 2026-09-04: `git filter-repo` xóa binary khỏi lịch sử + force push
   (master + feat/custom-policy). Repo pack: ~50MB → 1.47MB.
 - [x] Known pre-existing (không phải của đợt này): integration test
