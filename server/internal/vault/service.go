@@ -8,8 +8,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/valt-dev/valt/server/internal/rbac"
-	"github.com/valt-dev/valt/server/pkg/crypto"
+	"github.com/ldphuong-vn/valtag/server/internal/rbac"
+	"github.com/ldphuong-vn/valtag/server/pkg/crypto"
 )
 
 type Secret struct {
@@ -129,7 +129,7 @@ func (s *Service) CreateSecret(ctx context.Context, userID string, input CreateS
 }
 
 func (s *Service) ListSecrets(ctx context.Context, userID, name, projectID string, page, limit, offset int) (*ListResult, error) {
-	// Optional exact-match filters (name, project_id) — `valt get <name>`
+	// Optional exact-match filters (name, project_id) — `valtag get <name>`
 	// relies on them; the server previously ignored both, so the CLI could
 	// act on the wrong secret.
 	filter := ""

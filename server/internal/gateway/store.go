@@ -54,7 +54,7 @@ func GeneratePlaceholder() (string, error) {
 	if _, err := rand.Read(b); err != nil {
 		return "", fmt.Errorf("generating placeholder: %w", err)
 	}
-	return "valt_pk_" + base64.RawURLEncoding.EncodeToString(b), nil
+	return "valtag_pk_" + base64.RawURLEncoding.EncodeToString(b), nil
 }
 
 // FindMatchingRoute finds an enabled route for an agent that matches host+path.

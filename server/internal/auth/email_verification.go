@@ -11,7 +11,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/valt-dev/valt/server/pkg/apierror"
+	"github.com/ldphuong-vn/valtag/server/pkg/apierror"
 )
 
 // generateToken returns a random 32-byte hex string and its SHA-256 hash.
@@ -59,10 +59,10 @@ func (h *Handler) sendVerificationEmail(ctx context.Context, userID, email strin
 
 	verifyURL := fmt.Sprintf("%s/api/v1/auth/verify-email?token=%s", h.dashboardURL, raw)
 	body := fmt.Sprintf(
-		"Welcome to Valt!\n\nPlease verify your email address by clicking the link below:\n\n%s\n\nThis link expires in 24 hours.\n\nIf you did not create a Valt account, you can ignore this email.",
+		"Welcome to valtag!\n\nPlease verify your email address by clicking the link below:\n\n%s\n\nThis link expires in 24 hours.\n\nIf you did not create a valtag account, you can ignore this email.",
 		verifyURL,
 	)
-	return h.emailSender.Send(ctx, email, "Verify your Valt email", body)
+	return h.emailSender.Send(ctx, email, "Verify your valtag email", body)
 }
 
 // verifyEmail handles GET /auth/verify-email?token=X

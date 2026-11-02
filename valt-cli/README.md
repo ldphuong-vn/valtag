@@ -1,6 +1,6 @@
 # valt CLI
 
-Secret vault CLI for the Valt platform.
+Secret vault CLI for the valtag platform.
 
 ## Install
 

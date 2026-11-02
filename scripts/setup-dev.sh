@@ -28,7 +28,7 @@ docker compose up -d --build
 
 # Wait for postgres
 echo "Waiting for PostgreSQL..."
-until docker compose exec -T postgres pg_isready -U "${POSTGRES_USER:-valt}" > /dev/null 2>&1; do
+until docker compose exec -T postgres pg_isready -U "${POSTGRES_USER:-valtag}" > /dev/null 2>&1; do
     sleep 1
 done
 echo "[ok] PostgreSQL ready"

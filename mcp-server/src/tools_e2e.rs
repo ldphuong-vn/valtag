@@ -1,15 +1,15 @@
 /// Comprehensive E2E test suite for MCP tool calls with detailed logging
 /// Tests validate successful tool call blocks fail whenever expectations aren't met
 use serde_json::json;
-use crate::client::ValtClient;
+use crate::client::ValtagClient;
 use crate::tools;
 use crate::error::ValtError;
 
-/// Test helper: creates a mock ValtClient with default config
-fn create_test_client() -> Result<ValtClient, ValtError> {
+/// Test helper: creates a mock ValtagClient with default config
+fn create_test_client() -> Result<ValtagClient, ValtError> {
     use crate::config::ValtConfig;
     let config = ValtConfig::default();
-    ValtClient::new(config.api_url, "test_agent_token".into())
+    ValtagClient::new(config.api_url, "test_agent_token".into())
 }
 
 #[cfg(test)]
@@ -512,7 +512,7 @@ mod tests {
     #[test]
     fn test_authenticate_agent_response_structure() {
         let example_response = json!({
-            "message": "Agent token stored successfully. You can now use Valt tools."
+            "message": "Agent token stored successfully. You can now use valtag tools."
         });
 
         assert!(

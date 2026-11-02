@@ -12,8 +12,8 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/valt-dev/valt/server/internal/testutil"
-	"github.com/valt-dev/valt/server/pkg/crypto"
+	"github.com/ldphuong-vn/valtag/server/internal/testutil"
+	"github.com/ldphuong-vn/valtag/server/pkg/crypto"
 )
 
 // newSweepMasterKey generates a fresh AES-256 key per test run — integration

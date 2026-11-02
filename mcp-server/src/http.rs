@@ -13,10 +13,10 @@ use std::time::Duration;
 use futures_util::StreamExt;
 use tokio_stream::wrappers::IntervalStream;
 
-use crate::client::ValtClient;
+use crate::client::ValtagClient;
 
 pub struct AppState {
-    pub client: Arc<ValtClient>,
+    pub client: Arc<ValtagClient>,
 }
 
 fn verify_token(headers: &HeaderMap) -> bool {
@@ -61,7 +61,7 @@ pub async fn handle_mcp_post(
         }
     };
 
-    // TODO(Phase 14): resolve $VALT_SECRET_<id> placeholders via regex before dispatch
+    // TODO(Phase 14): resolve $VALTAG_SECRET_<id> placeholders via regex before dispatch
     let response = crate::handle_request(&raw, &state.client).await;
     Json(response).into_response()
 }
@@ -87,7 +87,7 @@ pub async fn handle_mcp_sse(
             .enumerate()
             .map(|(i, _)| {
                 let event = if i == 0 {
-                    Event::default().event("connected").data("valt-mcp-server ready")
+                    Event::default().event("connected").data("valtag-mcp-server ready")
                 } else {
                     Event::default().event("ping").data("keep-alive")
                 };
@@ -98,7 +98,7 @@ pub async fn handle_mcp_sse(
     Sse::new(stream).keep_alive(KeepAlive::default()).into_response()
 }
 
-pub async fn run_http_server(port: u16, client: ValtClient) -> anyhow::Result<()> {
+pub async fn run_http_server(port: u16, client: ValtagClient) -> anyhow::Result<()> {
     let state = Arc::new(AppState {
         client: Arc::new(client),
     });
@@ -122,7 +122,7 @@ pub async fn run_http_server(port: u16, client: ValtClient) -> anyhow::Result<()
         }
     };
     let addr = format!("{host}:{port}");
-    tracing::info!("Valt MCP HTTP server listening on {}", addr);
+    tracing::info!("valtag MCP HTTP server listening on {}", addr);
 
     let listener = tokio::net::TcpListener::bind(&addr).await?;
     axum::serve(listener, app).await?;

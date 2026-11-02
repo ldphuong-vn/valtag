@@ -13,9 +13,9 @@ import (
 	neturl "net/url"
 
 	"github.com/spf13/cobra"
-	"github.com/valt-dev/valt/valt-cli/internal/api"
-	"github.com/valt-dev/valt/valt-cli/internal/config"
-	"github.com/valt-dev/valt/valt-cli/internal/keychain"
+	"github.com/ldphuong-vn/valtag/valt-cli/internal/api"
+	"github.com/ldphuong-vn/valtag/valt-cli/internal/config"
+	"github.com/ldphuong-vn/valtag/valt-cli/internal/keychain"
 )
 
 var setupCmd = &cobra.Command{
@@ -30,7 +30,7 @@ func runSetup(cmd *cobra.Command, args []string) error {
 	reader := bufio.NewReader(os.Stdin)
 
 	// Step 1: API URL
-	fmt.Print("Valt API URL [https://api.valt.dev]: ")
+	fmt.Print("valtag API URL [https://api.valt.dev]: ")
 	apiURL, _ := reader.ReadString('\n')
 	apiURL = strings.TrimSpace(apiURL)
 	if apiURL == "" {
@@ -129,7 +129,7 @@ func runSetup(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Println("\n✓ Setup complete!")
-	fmt.Println("Next: valt mcp install --ide claude")
+	fmt.Println("Next: valtag mcp install --ide claude")
 	return nil
 }
 

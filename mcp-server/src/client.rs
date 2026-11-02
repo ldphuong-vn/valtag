@@ -5,19 +5,19 @@ use crate::keychain;
 use keyring::Entry as KeyringEntry;
 
 /// Returns the best available auth token in priority order:
-/// 1. VALT_AGENT_TOKEN env var
+/// 1. VALTAG_AGENT_TOKEN env var
 /// 2. Keychain agent token (OS keychain only, no env re-check)
 /// 3. VALT_TOKEN env var (legacy user JWT)
 /// 4. Keychain user token
 pub fn get_auth_token() -> Option<String> {
     // 1. Agent token env var
-    if let Ok(token) = std::env::var("VALT_AGENT_TOKEN") {
+    if let Ok(token) = std::env::var("VALTAG_AGENT_TOKEN") {
         if !token.is_empty() {
             return Some(token);
         }
     }
     // 2. Keychain agent token (OS keychain only)
-    if let Ok(entry) = KeyringEntry::new("valt-agent", "valt-agent-token") {
+    if let Ok(entry) = KeyringEntry::new("valtag-agent", "valtag-agent-token") {
         if let Ok(t) = entry.get_password() {
             if !t.is_empty() {
                 return Some(t);
@@ -30,17 +30,17 @@ pub fn get_auth_token() -> Option<String> {
             return Some(token);
         }
     }
-    // 4. Keychain user token (also checks VALT_AUTH_TOKEN env via get_token)
+    // 4. Keychain user token (also checks VALTAG_AUTH_TOKEN env via get_token)
     keychain::get_token()
 }
 
-pub struct ValtClient {
+pub struct ValtagClient {
     http: Client,
     base_url: String,
     token: String,
 }
 
-impl ValtClient {
+impl ValtagClient {
     pub fn new(base_url: String, token: String) -> Result<Self> {
         let http = Client::builder()
             .timeout(std::time::Duration::from_secs(30))
@@ -61,7 +61,7 @@ impl ValtClient {
         if status >= 400 {
             if status == 401 {
                 eprintln!(
-                    "[valt-mcp-server] WARN unauthorized API call to {url}. token invalid/expired OR wrong token type for this endpoint"
+                    "[valtag-mcp-server] WARN unauthorized API call to {url}. token invalid/expired OR wrong token type for this endpoint"
                 );
             }
             // Extract error message from API response
@@ -95,7 +95,7 @@ impl ValtClient {
         if status >= 400 {
             if status == 401 {
                 eprintln!(
-                    "[valt-mcp-server] WARN unauthorized API call to {url}. token invalid/expired OR wrong token type for this endpoint"
+                    "[valtag-mcp-server] WARN unauthorized API call to {url}. token invalid/expired OR wrong token type for this endpoint"
                 );
             }
             // Extract error message from API response

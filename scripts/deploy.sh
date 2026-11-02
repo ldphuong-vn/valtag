@@ -4,7 +4,7 @@
 
 set -e
 VPS="root@103.142.137.232"
-REMOTE_DIR="/opt/valt"
+REMOTE_DIR="/opt/valtag"
 
 echo "=== Deploying Valt ==="
 
@@ -25,5 +25,5 @@ echo "[4/4] Rebuilding..."
 ssh $VPS "cd $REMOTE_DIR && docker compose -f docker-compose.prod.yml down && docker compose -f docker-compose.prod.yml up -d --build"
 
 echo "=== Deploy complete ==="
-echo "Dashboard: https://valt.turbo.ai.vn"
-echo "Health: https://valt.turbo.ai.vn/health"
+echo "Dashboard: https://valtag.turbo.ai.vn"
+echo "Health: https://valtag.turbo.ai.vn/health"

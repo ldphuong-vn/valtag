@@ -35,9 +35,9 @@ func TestDeriveDerivedKeyFormat(t *testing.T) {
 }
 
 func TestHashDerivedKey(t *testing.T) {
-	h1 := hashDerivedKey("valt_dk_a")
-	h2 := hashDerivedKey("valt_dk_a")
-	h3 := hashDerivedKey("valt_dk_b")
+	h1 := hashDerivedKey("valtag_dk_a")
+	h2 := hashDerivedKey("valtag_dk_a")
+	h3 := hashDerivedKey("valtag_dk_b")
 	if h1 != h2 {
 		t.Fatal("hash must be stable for the same key")
 	}

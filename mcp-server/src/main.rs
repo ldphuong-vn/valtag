@@ -18,11 +18,11 @@ use serde_json::{json, Value};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tracing::info;
 
-use client::ValtClient;
+use client::ValtagClient;
 use protocol::{JsonRpcRequest, error_response, success_response};
 
 #[derive(Parser)]
-#[command(name = "valt-mcp-server", version = "0.1.0")]
+#[command(name = "valtag-mcp-server", version = "0.1.0")]
 struct Args {
     /// Transport mode: stdio (default) or http
     #[arg(long, default_value = "stdio")]
@@ -51,25 +51,25 @@ async fn main() {
     };
 
     let token = client::get_auth_token().unwrap_or_default();
-    let client = ValtClient::new(cfg.api_url.clone(), token)
+    let client = ValtagClient::new(cfg.api_url.clone(), token)
         .expect("Failed to build HTTP client");
 
     match args.transport.as_str() {
         "http" => {
-            info!("Valt MCP Server v0.1.0 starting (http mode, port {})", args.port);
+            info!("valtag MCP Server v0.1.0 starting (http mode, port {})", args.port);
             if let Err(e) = http::run_http_server(args.port, client).await {
                 eprintln!("HTTP server error: {e}");
                 std::process::exit(1);
             }
         }
         _ => {
-            info!("Valt MCP Server v0.1.0 starting (stdio mode)");
+            info!("valtag MCP Server v0.1.0 starting (stdio mode)");
             run_stdio_loop(client).await;
         }
     }
 }
 
-async fn run_stdio_loop(client: ValtClient) {
+async fn run_stdio_loop(client: ValtagClient) {
     let stdin = tokio::io::stdin();
     let stdout = tokio::io::stdout();
     let mut reader = BufReader::new(stdin);
@@ -106,7 +106,7 @@ async fn run_stdio_loop(client: ValtClient) {
     }
 }
 
-pub async fn handle_request(raw: &str, client: &ValtClient) -> Value {
+pub async fn handle_request(raw: &str, client: &ValtagClient) -> Value {
     let req: JsonRpcRequest = match serde_json::from_str(raw) {
         Ok(r) => r,
         Err(e) => {
@@ -123,7 +123,7 @@ pub async fn handle_request(raw: &str, client: &ValtClient) -> Value {
                 "tools": { "listChanged": false },
                 "resources": { "subscribe": false, "listChanged": false }
             },
-            "serverInfo": { "name": "valt-mcp-server", "version": "0.1.0" }
+            "serverInfo": { "name": "valtag-mcp-server", "version": "0.1.0" }
         })),
         "notifications/initialized" => {
             // No response for notifications

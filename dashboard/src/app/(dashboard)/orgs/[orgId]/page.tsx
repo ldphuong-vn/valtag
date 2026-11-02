@@ -37,8 +37,8 @@ export default function WorkspaceListPage() {
       localStorage.setItem('valt_current_workspace', workspaceId)
       localStorage.setItem('valt_current_workspace_name', workspaceName)
       localStorage.removeItem('valt_current_project')
-      window.dispatchEvent(new Event('valt:workspace-changed'))
-      window.dispatchEvent(new Event('valt:project-changed'))
+      window.dispatchEvent(new Event('valtag:workspace-changed'))
+      window.dispatchEvent(new Event('valtag:project-changed'))
       setCurrentWorkspaceId(workspaceId)
     }
   }

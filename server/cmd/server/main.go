@@ -16,31 +16,31 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/valt-dev/valt/server/internal/admin"
-	"github.com/valt-dev/valt/server/internal/agent"
-	"github.com/valt-dev/valt/server/internal/audit"
-	"github.com/valt-dev/valt/server/internal/auth"
-	"github.com/valt-dev/valt/server/internal/billing"
-	"github.com/valt-dev/valt/server/internal/integration"
-	"github.com/valt-dev/valt/server/internal/config"
-	"github.com/valt-dev/valt/server/internal/consent"
-	"github.com/valt-dev/valt/server/internal/database"
-	"github.com/valt-dev/valt/server/internal/dynsecret"
-	"github.com/valt-dev/valt/server/internal/gateway"
-	custommiddleware "github.com/valt-dev/valt/server/internal/middleware"
-	"github.com/valt-dev/valt/server/internal/notify"
-	"github.com/valt-dev/valt/server/internal/rbac"
-	"github.com/valt-dev/valt/server/internal/org"
-	"github.com/valt-dev/valt/server/internal/policy"
-	"github.com/valt-dev/valt/server/internal/project"
-	"github.com/valt-dev/valt/server/internal/ratelimit"
-	"github.com/valt-dev/valt/server/internal/scanner"
-	"github.com/valt-dev/valt/server/internal/usage"
-	"github.com/valt-dev/valt/server/internal/vault"
-	"github.com/valt-dev/valt/server/internal/webhooks"
-	"github.com/valt-dev/valt/server/internal/workflow"
-	"github.com/valt-dev/valt/server/internal/workspace"
-	"github.com/valt-dev/valt/server/pkg/apierror"
+	"github.com/ldphuong-vn/valtag/server/internal/admin"
+	"github.com/ldphuong-vn/valtag/server/internal/agent"
+	"github.com/ldphuong-vn/valtag/server/internal/audit"
+	"github.com/ldphuong-vn/valtag/server/internal/auth"
+	"github.com/ldphuong-vn/valtag/server/internal/billing"
+	"github.com/ldphuong-vn/valtag/server/internal/integration"
+	"github.com/ldphuong-vn/valtag/server/internal/config"
+	"github.com/ldphuong-vn/valtag/server/internal/consent"
+	"github.com/ldphuong-vn/valtag/server/internal/database"
+	"github.com/ldphuong-vn/valtag/server/internal/dynsecret"
+	"github.com/ldphuong-vn/valtag/server/internal/gateway"
+	custommiddleware "github.com/ldphuong-vn/valtag/server/internal/middleware"
+	"github.com/ldphuong-vn/valtag/server/internal/notify"
+	"github.com/ldphuong-vn/valtag/server/internal/rbac"
+	"github.com/ldphuong-vn/valtag/server/internal/org"
+	"github.com/ldphuong-vn/valtag/server/internal/policy"
+	"github.com/ldphuong-vn/valtag/server/internal/project"
+	"github.com/ldphuong-vn/valtag/server/internal/ratelimit"
+	"github.com/ldphuong-vn/valtag/server/internal/scanner"
+	"github.com/ldphuong-vn/valtag/server/internal/usage"
+	"github.com/ldphuong-vn/valtag/server/internal/vault"
+	"github.com/ldphuong-vn/valtag/server/internal/webhooks"
+	"github.com/ldphuong-vn/valtag/server/internal/workflow"
+	"github.com/ldphuong-vn/valtag/server/internal/workspace"
+	"github.com/ldphuong-vn/valtag/server/pkg/apierror"
 )
 
 func main() {
@@ -403,7 +403,7 @@ func main() {
 	}
 
 	go func() {
-		log.Printf("Valt server starting on :%s", cfg.Port)
+		log.Printf("valtag server starting on :%s", cfg.Port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Server failed: %v", err)
 		}
@@ -480,7 +480,7 @@ func healthHandler(pool *pgxpool.Pool) http.HandlerFunc {
 
 		resp := healthResponse{
 			Status:    status,
-			Service:   "valt-server",
+			Service:   "valtag-server",
 			Version:   "0.1.0",
 			Timestamp: time.Now().UTC().Format(time.RFC3339),
 			Database:  dbStatus,

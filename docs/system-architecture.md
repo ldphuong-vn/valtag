@@ -100,9 +100,9 @@ AI Agent (Claude, etc.)
 
 ### Auth Token Storage
 1. OS keychain via `keyring` crate (primary)
-2. `VALT_TOKEN` env var / `VALT_AGENT_TOKEN` env var (fallback)
+2. `VALT_TOKEN` env var / `VALTAG_AGENT_TOKEN` env var (fallback)
 
-## Valt CLI (Phase 2)
+## valtag CLI (Phase 2)
 
 **Pattern:** Standalone Go binary for agent-free credential access; cross-platform via goreleaser.
 
@@ -238,7 +238,7 @@ Go linting via `.golangci.yml` (govet shadow, errcheck, staticcheck, unused).
 | `internal/notify/slack.go` | SlackAdapter: Block Kit interactive messages with Approve/Reject buttons |
 | `internal/notify/slack_webhook.go` | SlackWebhookHandler: HMAC-SHA256 signature verification, button callback routing |
 | `internal/notify/telegram.go` | TelegramAdapter: Inline keyboard buttons, /start linking flow for account association |
-| `internal/notify/telegram_webhook.go` | TelegramWebhookHandler: Bot API callbacks, Telegram user → Valt user mapping |
+| `internal/notify/telegram_webhook.go` | TelegramWebhookHandler: Bot API callbacks, Telegram user → valtag user mapping |
 | `internal/policy/resolver.go` | Custom policy resolver: 3-level hierarchy (secret → project → tier defaults) |
 | `internal/vault/handler.go` (new) | `GetSecretPolicy`, `PutSecretPolicy` handlers — secret-level policy CRUD |
 | `internal/project/handler.go` (new) | `GetProjectPolicy`, `PutProjectPolicy` handlers — project-level policy CRUD |
@@ -346,14 +346,14 @@ Go linting via `.golangci.yml` (govet shadow, errcheck, staticcheck, unused).
 
 ```
 MCP Server (Rust)
-  └─▶ VALT_AGENT_TOKEN env var (or OS keychain via authenticate_agent tool)
+  └─▶ VALTAG_AGENT_TOKEN env var (or OS keychain via authenticate_agent tool)
         └─▶ Go backend — agent token middleware
               └─▶ validates token hash against agent_tokens table
                     └─▶ attaches agent identity to request context
 ```
 
 - Agent tokens are stored as hashed values in `agent_tokens` table; plaintext returned only at creation.
-- `authenticate_agent` MCP tool accepts a token, stores it in the OS keychain, and clears `VALT_AGENT_TOKEN` env usage.
+- `authenticate_agent` MCP tool accepts a token, stores it in the OS keychain, and clears `VALTAG_AGENT_TOKEN` env usage.
 
 ## Approval Channels (Phase 2)
 

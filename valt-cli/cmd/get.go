@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/valt-dev/valt/valt-cli/internal/config"
+	"github.com/ldphuong-vn/valtag/valt-cli/internal/config"
 )
 
 var getCmd = &cobra.Command{
@@ -51,7 +51,7 @@ func runGet(cmd *cobra.Command, args []string) error {
 	}
 	err := client.Get(context.Background(), "/credentials/by-secret/"+secretID, &cred)
 	if err == nil && cred.Value != "" {
-		fmt.Print(cred.Value) // no newline — safe for $(valt get NAME)
+		fmt.Print(cred.Value) // no newline — safe for $(valtag get NAME)
 		return nil
 	}
 
@@ -64,7 +64,7 @@ func runGet(cmd *cobra.Command, args []string) error {
 	if err := client.Post(context.Background(),
 		"/secrets/"+secretID+"/access-requests",
 		map[string]interface{}{
-			"reason":           "valt CLI get",
+			"reason":           "valtag CLI get",
 			"duration_minutes": 60,
 		},
 		&req,
@@ -82,7 +82,7 @@ func runGet(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	fmt.Fprintf(os.Stderr, "Access request created (ID: %s). Run: valt status %s\n", req.ID, req.ID)
+	fmt.Fprintf(os.Stderr, "Access request created (ID: %s). Run: valtag status %s\n", req.ID, req.ID)
 	fmt.Fprintf(os.Stderr, "Waiting for approval. Check your email/Slack for the approval link.\n")
 	return nil
 }

@@ -8,7 +8,7 @@ import (
 )
 
 // service is the unified keychain service name shared between CLI and MCP server.
-const service = "valt"
+const service = "valtag"
 
 // legacyService is the old CLI service name kept for backward-compat migration.
 const legacyService = "valt-cli"
@@ -16,9 +16,9 @@ const legacyService = "valt-cli"
 const userKey = "auth-token"
 
 // GetToken returns the stored auth token, checking env var first,
-// then the unified "valt" keychain entry, then the legacy "valt-cli" entry.
+// then the unified "valtag" keychain entry, then the legacy "valt-cli" entry.
 func GetToken() (string, error) {
-	if v := os.Getenv("VALT_AUTH_TOKEN"); v != "" {
+	if v := os.Getenv("VALTAG_AUTH_TOKEN"); v != "" {
 		return v, nil
 	}
 	// Try new unified service name first.

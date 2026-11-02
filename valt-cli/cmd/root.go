@@ -5,14 +5,14 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/valt-dev/valt/valt-cli/internal/api"
-	"github.com/valt-dev/valt/valt-cli/internal/config"
-	"github.com/valt-dev/valt/valt-cli/internal/keychain"
+	"github.com/ldphuong-vn/valtag/valt-cli/internal/api"
+	"github.com/ldphuong-vn/valtag/valt-cli/internal/config"
+	"github.com/ldphuong-vn/valtag/valt-cli/internal/keychain"
 )
 
 var rootCmd = &cobra.Command{
-	Use:     "valt",
-	Short:   "Valt — secret vault CLI",
+	Use:     "valtag",
+	Short:   "valtag — secret vault CLI",
 	Version: "0.1.0",
 }
 
@@ -25,7 +25,7 @@ func MustClient() *api.Client {
 	}
 	token, err := keychain.GetToken()
 	if err != nil || token == "" {
-		fmt.Fprintln(os.Stderr, "Not logged in. Run: valt setup")
+		fmt.Fprintln(os.Stderr, "Not logged in. Run: valtag setup")
 		os.Exit(1)
 	}
 	return api.New(cfg.APIURL, token)

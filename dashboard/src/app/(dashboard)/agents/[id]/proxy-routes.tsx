@@ -159,7 +159,7 @@ export function ProxyRoutes({ agentId }: ProxyRoutesProps) {
           <h3 className="text-sm font-medium text-blue-700 dark:text-blue-300">Quick Setup</h3>
           <p className="text-xs text-blue-600 dark:text-blue-400">Configure your agent with these environment variables:</p>
           <div className="bg-white dark:bg-black rounded border p-3 space-y-1 font-mono text-xs">
-            <div>HTTPS_PROXY=http://valt-gateway:10256</div>
+            <div>HTTPS_PROXY=http://valtag-gateway:10256</div>
             {routes.map(r => (
               <div key={r.id}># {r.host_pattern}: {r.placeholder_key}</div>
             ))}
@@ -167,7 +167,7 @@ export function ProxyRoutes({ agentId }: ProxyRoutesProps) {
           <button
             type="button"
             onClick={() => {
-              const text = `HTTPS_PROXY=http://valt-gateway:10256\n${routes.map(r => `# ${r.host_pattern}: ${r.placeholder_key}`).join('\n')}`
+              const text = `HTTPS_PROXY=http://valtag-gateway:10256\n${routes.map(r => `# ${r.host_pattern}: ${r.placeholder_key}`).join('\n')}`
               navigator.clipboard.writeText(text)
             }}
             className="text-xs text-blue-700 dark:text-blue-300 hover:underline"

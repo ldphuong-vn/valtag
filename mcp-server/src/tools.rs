@@ -1,5 +1,5 @@
 use serde_json::{json, Value};
-use crate::client::ValtClient;
+use crate::client::ValtagClient;
 use crate::error::Result;
 use crate::keychain;
 use crate::protocol::ToolDef;
@@ -67,11 +67,11 @@ pub fn list_tools() -> Vec<ToolDef> {
         },
         ToolDef {
             name: "authenticate_agent".into(),
-            description: "Store an agent token for authenticating with the Valt server. Run this once after receiving a token from the Valt dashboard.".into(),
+            description: "Store an agent token for authenticating with the valtag server. Run this once after receiving a token from the valtag dashboard.".into(),
             input_schema: json!({
                 "type": "object",
                 "properties": {
-                    "token": {"type": "string", "description": "The agent token issued from the Valt dashboard"}
+                    "token": {"type": "string", "description": "The agent token issued from the valtag dashboard"}
                 },
                 "required": ["token"]
             }),
@@ -91,7 +91,7 @@ pub fn list_tools() -> Vec<ToolDef> {
         },
         ToolDef {
             name: "store_secret".into(),
-            description: "Store a secret in the Valt vault. Use after scanning to import found credentials.".into(),
+            description: "Store a secret in the valtag vault. Use after scanning to import found credentials.".into(),
             input_schema: json!({
                 "type": "object",
                 "properties": {
@@ -119,7 +119,7 @@ pub fn list_tools() -> Vec<ToolDef> {
     ]
 }
 
-pub async fn call_tool(name: &str, args: &Value, client: &ValtClient) -> Result<Value> {
+pub async fn call_tool(name: &str, args: &Value, client: &ValtagClient) -> Result<Value> {
     match name {
         "request_secret_access" => tool_request_access(args, client).await,
         "check_approval_status" => tool_check_status(args, client).await,
@@ -134,7 +134,7 @@ pub async fn call_tool(name: &str, args: &Value, client: &ValtClient) -> Result<
     }
 }
 
-async fn tool_request_access(args: &Value, client: &ValtClient) -> Result<Value> {
+async fn tool_request_access(args: &Value, client: &ValtagClient) -> Result<Value> {
     let secret_id = args["secret_id"].as_str()
         .ok_or_else(|| crate::error::ValtError::Protocol("secret_id required".into()))?;
     let reason = args["reason"].as_str()
@@ -148,7 +148,7 @@ async fn tool_request_access(args: &Value, client: &ValtClient) -> Result<Value>
     }))
 }
 
-async fn tool_check_status(args: &Value, client: &ValtClient) -> Result<Value> {
+async fn tool_check_status(args: &Value, client: &ValtagClient) -> Result<Value> {
     let request_id = args["request_id"].as_str()
         .ok_or_else(|| crate::error::ValtError::Protocol("request_id required".into()))?;
     // H4 fix: fetch single request directly instead of scanning the full list.
@@ -162,7 +162,7 @@ async fn tool_check_status(args: &Value, client: &ValtClient) -> Result<Value> {
     }))
 }
 
-async fn tool_get_credential(args: &Value, client: &ValtClient) -> Result<Value> {
+async fn tool_get_credential(args: &Value, client: &ValtagClient) -> Result<Value> {
     let request_id = args["request_id"].as_str()
         .ok_or_else(|| crate::error::ValtError::Protocol("request_id required".into()))?;
     let cred = client.get_credential(request_id).await?;
@@ -194,7 +194,7 @@ async fn tool_get_credential(args: &Value, client: &ValtClient) -> Result<Value>
     }
 }
 
-async fn tool_revoke_credential(args: &Value, client: &ValtClient) -> Result<Value> {
+async fn tool_revoke_credential(args: &Value, client: &ValtagClient) -> Result<Value> {
     let request_id = args["request_id"].as_str()
         .ok_or_else(|| crate::error::ValtError::Protocol("request_id required".into()))?;
     client.revoke_credential(request_id).await?;
@@ -205,10 +205,10 @@ async fn tool_authenticate_agent(args: &Value) -> Result<Value> {
     let token = args["token"].as_str()
         .ok_or_else(|| crate::error::ValtError::Protocol("token required".into()))?;
     keychain::set_agent_token(token)?;
-    Ok(json!({"message": "Agent token stored successfully. You can now use Valt tools."}))
+    Ok(json!({"message": "Agent token stored successfully. You can now use valtag tools."}))
 }
 
-async fn tool_list_secrets(args: &Value, client: &ValtClient) -> Result<Value> {
+async fn tool_list_secrets(args: &Value, client: &ValtagClient) -> Result<Value> {
     let _ = args; // pagination not yet implemented in backend query
     let result = client.list_secrets().await?;
     // Strip sensitive fields, return only metadata

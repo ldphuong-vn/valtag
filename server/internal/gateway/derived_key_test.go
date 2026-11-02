@@ -11,9 +11,9 @@ func TestDerivedKeyFromAuthorization(t *testing.T) {
 		header  string
 		wantKey string
 	}{
-		{"bearer derived key", "Bearer valt_dk_abc123", "valt_dk_abc123"},
-		{"bare derived key", "valt_dk_abc123", "valt_dk_abc123"},
-		{"bearer with extra spaces", "Bearer   valt_dk_abc123  ", "valt_dk_abc123"},
+		{"bearer derived key", "Bearer valtag_dk_abc123", "valtag_dk_abc123"},
+		{"bare derived key", "valtag_dk_abc123", "valtag_dk_abc123"},
+		{"bearer with extra spaces", "Bearer   valtag_dk_abc123  ", "valtag_dk_abc123"},
 		{"real api key ignored", "Bearer sk-real-upstream-key", ""},
 		{"agent token ignored", "Bearer valt_agt_token", ""},
 		{"empty", "", ""},

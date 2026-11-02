@@ -110,8 +110,8 @@ export default function OnboardingPage() {
       // Persist context so user lands on their new project immediately.
       if (org) {
         persistWorkspaceContext(org.id, workspace.id, workspace.name, project.id)
-        window.dispatchEvent(new Event('valt:workspace-changed'))
-        window.dispatchEvent(new Event('valt:project-changed'))
+        window.dispatchEvent(new Event('valtag:workspace-changed'))
+        window.dispatchEvent(new Event('valtag:project-changed'))
       }
       setStep('done')
     } catch (e) {
@@ -150,7 +150,7 @@ export default function OnboardingPage() {
         <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 mb-4">
           <Shield className="w-6 h-6 text-primary" />
         </div>
-        <h1 className="text-2xl font-bold tracking-tight">Welcome to Valt</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Welcome to valtag</h1>
         <p className="text-sm text-muted-foreground mt-1">Let's get you set up in a minute</p>
       </div>
 

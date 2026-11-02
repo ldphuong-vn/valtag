@@ -1,5 +1,5 @@
-// Package valt provides a Go client for the Valt secret vault API.
-package valt
+// Package valtag provides a Go client for the valtag secret vault API.
+package valtag
 
 import (
 	"bytes"
@@ -11,14 +11,14 @@ import (
 	"time"
 )
 
-// Client is the Valt API client.
+// Client is the valtag API client.
 type Client struct {
 	baseURL    string
 	token      string
 	httpClient *http.Client
 }
 
-// New creates a new Valt client.
+// New creates a new valtag client.
 func New(baseURL, token string) *Client {
 	return &Client{
 		baseURL:    baseURL,
@@ -119,11 +119,11 @@ func (c *Client) do(req *http.Request, out interface{}) error {
 		return err
 	}
 	if resp.StatusCode >= 400 {
-		return fmt.Errorf("valt: API error %d: %s", resp.StatusCode, string(raw))
+		return fmt.Errorf("valtag: API error %d: %s", resp.StatusCode, string(raw))
 	}
 	if out != nil {
 		if err := json.Unmarshal(raw, out); err != nil {
-			return fmt.Errorf("valt: decoding response: %w", err)
+			return fmt.Errorf("valtag: decoding response: %w", err)
 		}
 	}
 	return nil

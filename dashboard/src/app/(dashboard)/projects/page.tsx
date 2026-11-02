@@ -36,8 +36,8 @@ export default function ProjectsPage() {
           localStorage.removeItem('valt_current_workspace')
           localStorage.removeItem('valt_current_workspace_name')
           localStorage.removeItem('valt_current_project')
-          window.dispatchEvent(new Event('valt:workspace-changed'))
-          window.dispatchEvent(new Event('valt:project-changed'))
+          window.dispatchEvent(new Event('valtag:workspace-changed'))
+          window.dispatchEvent(new Event('valtag:project-changed'))
           setHasWorkspace(false)
           setProjects([])
           setCurrentProjectId(null)
@@ -54,16 +54,16 @@ export default function ProjectsPage() {
 
     void load()
     window.addEventListener('storage', load)
-    window.addEventListener('valt:workspace-changed', load)
+    window.addEventListener('valtag:workspace-changed', load)
     return () => {
       window.removeEventListener('storage', load)
-      window.removeEventListener('valt:workspace-changed', load)
+      window.removeEventListener('valtag:workspace-changed', load)
     }
   }, [])
 
   function selectProject(projectId: string) {
     localStorage.setItem('valt_current_project', projectId)
-    window.dispatchEvent(new Event('valt:project-changed'))
+    window.dispatchEvent(new Event('valtag:project-changed'))
     setCurrentProjectId(projectId)
   }
 

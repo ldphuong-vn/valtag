@@ -10,10 +10,10 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/valt-dev/valt/server/internal/audit"
-	"github.com/valt-dev/valt/server/internal/database"
-	"github.com/valt-dev/valt/server/internal/dynsecret"
-	"github.com/valt-dev/valt/server/internal/vault"
+	"github.com/ldphuong-vn/valtag/server/internal/audit"
+	"github.com/ldphuong-vn/valtag/server/internal/database"
+	"github.com/ldphuong-vn/valtag/server/internal/dynsecret"
+	"github.com/ldphuong-vn/valtag/server/internal/vault"
 )
 
 const (
@@ -361,7 +361,7 @@ func TestLeaseIssuerStaticSecretUnchanged(t *testing.T) {
 	}
 
 	// Sanity: dynSvc still sees zero leases for the (unused) provider path.
-	if got, _ := dynSvc.ValidateDerivedKey(ctx, "valt_dk_nothing"); got != nil {
+	if got, _ := dynSvc.ValidateDerivedKey(ctx, "valtag_dk_nothing"); got != nil {
 		t.Fatal("nothing to validate on the static path")
 	}
 }

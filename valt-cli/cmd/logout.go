@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/valt-dev/valt/valt-cli/internal/keychain"
+	"github.com/ldphuong-vn/valtag/valt-cli/internal/keychain"
 )
 
 var logoutCmd = &cobra.Command{

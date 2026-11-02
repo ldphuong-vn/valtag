@@ -8,7 +8,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/valt-dev/valt/server/pkg/crypto"
+	"github.com/ldphuong-vn/valtag/server/pkg/crypto"
 )
 
 // OrgIntegration represents a connected third-party integration for an org.

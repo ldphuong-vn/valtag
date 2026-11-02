@@ -179,7 +179,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            cd /opt/valt
+            cd /opt/valtag
 
             # Pull latest images from GHCR
             docker compose -f docker-compose.prod.yml pull server dashboard migrate
@@ -210,5 +210,5 @@ jobs:
 #   SLACK_WEBHOOK_URL - (optional) Slack incoming webhook for deploy failure alerts
 #
 # GHCR auth uses GITHUB_TOKEN automatically (no extra secret needed).
-# VPS must have docker + docker compose installed and /opt/valt checked out.
+# VPS must have docker + docker compose installed and /opt/valtag checked out.
 # docker-compose.prod.yml on VPS must reference GHCR images (see deploy-manual.yml comments).

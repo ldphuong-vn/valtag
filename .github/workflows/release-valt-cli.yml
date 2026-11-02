@@ -1,4 +1,4 @@
-name: Release valt CLI
+name: Release valtag CLI
 
 on:
   push:

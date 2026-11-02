@@ -1,4 +1,4 @@
-# Valt — Team Pitch
+# valtag — Team Pitch
 
 > MCP-native secret vault with human-in-the-loop approval for AI agents.
 
@@ -16,7 +16,7 @@ There's no middle ground: controlled, audited, time-limited access with a human 
 
 ---
 
-## What Valt Does
+## What valtag Does
 
 1. You store secrets encrypted end-to-end (server never sees plaintext)
 2. AI agents request access via the MCP Protocol
@@ -40,7 +40,7 @@ There's no middle ground: controlled, audited, time-limited access with a human 
 ┌──────────────────────────────────────────────────────────────┐
 │  Developer Machine                                           │
 │  ├── IDE / AI Agent (Claude, Cursor, etc.)                   │
-│  │     └── Valt MCP Server (Rust, stdio JSON-RPC 2.0)       │
+│  │     └── valtag MCP Server (Rust, stdio JSON-RPC 2.0)       │
 │  └── valt CLI (Go) — headless secret access + env injection  │
 └─────────────────────────┬────────────────────────────────────┘
                           │  HTTPS
@@ -115,22 +115,22 @@ This mirrors the same model used by AWS Secrets Manager and HashiCorp Vault.
 **One-time setup:**
 ```
 1. Dashboard → /agents → Create Agent → copy token
-2. Install valt-mcp-server on dev machine
-3. Set VALT_AGENT_TOKEN=<token>  (or use the authenticate_agent MCP tool)
+2. Install valtag-mcp-server on dev machine
+3. Set VALTAG_AGENT_TOKEN=<token>  (or use the authenticate_agent MCP tool)
 4. Add to Claude / Cursor MCP config:
-     { "command": "valt-mcp-server", "transport": "stdio" }
+     { "command": "valtag-mcp-server", "transport": "stdio" }
 ```
 
 **Live workflow:**
 ```
 ① Agent discovers available secrets
      Claude calls:  list_my_secrets
-     Valt returns:  [ { id: "abc", name: "Stripe API Key", type: "api_key" } ]
+     valtag returns:  [ { id: "abc", name: "Stripe API Key", type: "api_key" } ]
 
 ② Agent requests access
      Claude calls:  request_secret_access
                     { secret_id: "abc", reason: "calling Stripe for payment task", duration: 60 }
-     Valt creates:  access request → status: "pending"
+     valtag creates:  access request → status: "pending"
                     returns request_id: "req_xyz"
 
 ③ Human sees request in dashboard /approvals
@@ -143,15 +143,15 @@ This mirrors the same model used by AWS Secrets Manager and HashiCorp Vault.
 
 ④ Agent polls while waiting
      Claude calls:  check_approval_status { request_id: "req_xyz" }
-     Valt returns:  { status: "pending" }   ← retries every few seconds
+     valtag returns:  { status: "pending" }   ← retries every few seconds
 
 ⑤ Human clicks Approve
-     Valt:  status → "approved" → "active"
+     valtag:  status → "approved" → "active"
             issues temporary credential (expires in 60 min)
 
 ⑥ Agent retrieves credential
      Claude calls:  get_credential { request_id: "req_xyz" }
-     Valt returns:  { value: "sk_live_...", expires_in: 3600 }
+     valtag returns:  { value: "sk_live_...", expires_in: 3600 }
      Claude uses the credential, completes the task
 
 ⑦ Credential expires automatically after 60 minutes
@@ -196,20 +196,20 @@ The rejection reason is stored and visible to the requester.
 
 ### Case 5: Dynamic database credentials
 
-Instead of a static shared password, Valt generates a fresh DB user per-session:
+Instead of a static shared password, valtag generates a fresh DB user per-session:
 
 ```
 1. Admin sets up a provider in /providers:
       { type: "postgres", host: "db.prod", admin credentials }
    Provider config is encrypted with AES-256-GCM at rest.
 
-2. Agent requests access → human approves → Valt:
+2. Agent requests access → human approves → valtag:
    → Connects to the target database as admin
    → CREATE USER session_<uuid> WITH PASSWORD '<random 32-char>'
    → GRANT SELECT ON schema.* TO session_<uuid>
    → Returns { username: "session_abc", password: "..." }
 
-3. Credential expires / is revoked → Valt:
+3. Credential expires / is revoked → valtag:
    → DROP USER session_abc  ← fully removed from the database
    Static password compromise is impossible — there is no static password.
 ```
@@ -221,7 +221,7 @@ Instead of a static shared password, Valt generates a fresh DB user per-session:
 ```
 From the IDE (via MCP tool):
    Claude calls:  scan_secrets { path: "./src" }
-   Valt scans:    all files in ./src for hardcoded credentials
+   valtag scans:    all files in ./src for hardcoded credentials
    Returns:       list of findings with file + line number
 
 From the dashboard /scans:
@@ -233,7 +233,7 @@ From the dashboard /scans:
 
 ### Case 7: Approval notifications (Slack / Telegram / Email)
 
-When an agent creates an access request, Valt pushes a notification to the approver's configured channels:
+When an agent creates an access request, valtag pushes a notification to the approver's configured channels:
 
 ```
 Slack (Block Kit message):
@@ -243,7 +243,7 @@ Slack (Block Kit message):
   │ Duration: 60 min    Tier: 2 (requires approval)   │
   │ [✅ Approve]  [❌ Reject]                         │
   └──────────────────────────────────────────────────┘
-  → Clicking a button calls the Valt API directly.
+  → Clicking a button calls the valtag API directly.
   → No dashboard visit required.
 
 Telegram: same message as inline keyboard buttons.
@@ -338,7 +338,7 @@ Agent rate limiting: 60 requests/minute per agent token (Redis-backed sliding wi
 
 ## Security Properties
 
-| Threat | How Valt handles it |
+| Threat | How valtag handles it |
 |--------|---------------------|
 | Compromised AI agent | Human approval required for every access |
 | Database breach | Zero-knowledge: encrypted blobs only, no plaintext |

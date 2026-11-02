@@ -148,7 +148,7 @@ Dashboard calls `/api/proxy/[...path]` (Next.js route handler) → Go backend `/
 ## Unresolved Questions
 1. Does Slack workspace support multiple org installs (org-level vs workspace-level)?
 2. Should per-seat dynamic updates use `subscription.Update()` or new checkout session?
-3. How to handle Stripe trial period with approval workflow in Valt?
+3. How to handle Stripe trial period with approval workflow in valtag?
 4. Should invoice.upcoming webhook auto-add seats, or manual user confirmation?
 
 ---

@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/valt-dev/valt/server/pkg/crypto"
+	"github.com/ldphuong-vn/valtag/server/pkg/crypto"
 )
 
 // Service manages dynamic secret providers and leases.

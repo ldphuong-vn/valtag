@@ -1,4 +1,4 @@
-# Research Report: Three Valt Features
+# Research Report: Three valtag Features
 **Date:** 2026-03-19 | **Researcher:** claude-haiku
 
 ---
@@ -88,39 +88,39 @@ CREATE TABLE master_key_shares (
 **Core APIs (VSCode):**
 - **TreeView + TreeDataProvider:** Hierarchical secret browser in sidebar. `getChildren()` fetches secrets; icons show status (pending approval, expired, healthy).
 - **SecretStorage API:** `secretStorage.store(key, value)` — stores agent token securely (Keychain on macOS, Credential Manager on Windows, libsecret on Linux).
-- **Authentication:** Use existing OAuth flow (if Valt supports OAuth) OR reuse agent token → store in SecretStorage → refresh on demand.
+- **Authentication:** Use existing OAuth flow (if valtag supports OAuth) OR reuse agent token → store in SecretStorage → refresh on demand.
 - **Command Palette:** `vault.requestSecret`, `vault.showApprovals`, `vault.injectEnv` (spawns terminal with `export` commands).
 
 **Minimal Feature Set (MVP):**
-1. **Auth:** Prompt for Valt URL + agent token on first install → store in SecretStorage
+1. **Auth:** Prompt for valtag URL + agent token on first install → store in SecretStorage
 2. **TreeView Sidebar:**
    - List user's projects → expand to secrets
    - Icon: green = ready, orange = pending approval, red = expired
    - Click secret → show metadata (created, rotated, owner)
 3. **Context Menu:**
    - "Copy secret value" → copies to clipboard (5-sec auto-clear)
-   - "Request access" → opens browser to Valt approval UI
+   - "Request access" → opens browser to valtag approval UI
    - "Show approvals" → TreeView sub-panel listing pending requests
-4. **Status Bar:** Show "Valt: 2 pending approvals" → click to expand approvals panel
+4. **Status Bar:** Show "valtag: 2 pending approvals" → click to expand approvals panel
 5. **Command:** `valt-inject-env` → opens terminal, exports secrets as env vars
 
 **Authentication Pattern:**
 - **Reuse existing agent token** (simplest) — token must have `read:secrets` + `read:workflow` perms.
-- On startup, validate token → if invalid, prompt to re-enter Valt URL + generate new token via CLI.
+- On startup, validate token → if invalid, prompt to re-enter valtag URL + generate new token via CLI.
 - Token stored in SecretStorage (never in workspace settings/git).
 
 **Tech Stack:**
 - **TypeScript** (strict mode) + Webview (TreeView only, no custom HTML)
 - **Vite** or **esbuild** for bundling (fast builds)
 - **@vscode/* dependencies only** (no extra runtimes)
-- **API client:** Use existing Go Valt API (http client in TS via `node-fetch` or `axios`)
+- **API client:** Use existing Go valtag API (http client in TS via `node-fetch` or `axios`)
 
 **Relative Priority:** Low-effort (TreeView + token storage) → Medium (approvals sidebar) → High-effort (intelligent env injection, secret rotation detection)
 
 **Caveat:** VSCode extensions run in untrusted contexts. Never assume secrets are safe. Recommend:
 - Secrets *always* expire in VSCode (max 1hr in memory)
 - Flag to disable clipboard copy (require manual view-only)
-- Log all fetches to Valt audit trail
+- Log all fetches to valtag audit trail
 
 ---
 
@@ -137,9 +137,9 @@ CREATE TABLE master_key_shares (
 ## Unresolved Questions
 
 1. **TOTP:** Should backup codes be regenerable, or one-time-only? (Regenerable = more UX burden; one-time = higher account-lockout risk.)
-2. **Shamir:** Will Valt offer managed recovery (Valt holds 2 shares), or purely user-managed? Affects trust model.
+2. **Shamir:** Will valtag offer managed recovery (valtag holds 2 shares), or purely user-managed? Affects trust model.
 3. **VSCode:** Should extension support secret *rotation* (auto-refresh env on file save), or view-only?
-4. **VSCode:** Will Valt provide OAuth, or always agent-token-based auth for extensions?
+4. **VSCode:** Will valtag provide OAuth, or always agent-token-based auth for extensions?
 
 ---
 

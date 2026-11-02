@@ -101,7 +101,7 @@ func (e *EnvLoader) LoadAgentToken() (string, error) {
 	}
 
 	// Get agent token - check multiple possible keys
-	possibleKeys := []string{"AGENT_TOKEN", "VALT_AGENT_TOKEN", "MCP_AGENT_TOKEN"}
+	possibleKeys := []string{"AGENT_TOKEN", "VALTAG_AGENT_TOKEN", "MCP_AGENT_TOKEN"}
 	for _, key := range possibleKeys {
 		if token := e.Get(key); token != "" {
 			return token, nil

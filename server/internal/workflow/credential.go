@@ -9,7 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/valt-dev/valt/server/internal/dynsecret"
+	"github.com/ldphuong-vn/valtag/server/internal/dynsecret"
 )
 
 // CredentialSession represents an active credential session.
@@ -107,7 +107,7 @@ func (m *CredentialManager) RevokeCredential(ctx context.Context, requestID stri
 
 	if leaseID != nil && m.dynSvc != nil {
 		if err := m.dynSvc.RevokeLease(ctx, *leaseID); err != nil {
-			// Session is already dead so the credential is unusable via Valt;
+			// Session is already dead so the credential is unusable via valtag;
 			// log the backend revocation failure rather than failing the call.
 			log.Printf("credential manager: failed to revoke lease %s for request %s: %v", *leaseID, requestID, err)
 		}

@@ -29,7 +29,7 @@ func init() {
 func mcpServerConfig(binaryPath string) map[string]interface{} {
 	return map[string]interface{}{
 		"mcpServers": map[string]interface{}{
-			"valt": map[string]interface{}{
+			"valtag": map[string]interface{}{
 				"command": binaryPath,
 				"args":    []string{},
 			},
@@ -38,11 +38,11 @@ func mcpServerConfig(binaryPath string) map[string]interface{} {
 }
 
 func runMCPInstall(cmd *cobra.Command, args []string) error {
-	// Find valt-mcp-server binary path
+	// Find valtag-mcp-server binary path
 	mcpBinary, err := findMCPBinary()
 	if err != nil {
-		fmt.Println("valt-mcp-server binary not found in PATH.")
-		fmt.Println("Download from: https://github.com/valt-dev/valt/releases")
+		fmt.Println("valtag-mcp-server binary not found in PATH.")
+		fmt.Println("Download from: https://github.com/ldphuong-vn/valtag/releases")
 		return err
 	}
 
@@ -86,18 +86,18 @@ func writeIDEConfig(path string, block []byte, ideName string) error {
 }
 
 func findMCPBinary() (string, error) {
-	binaryName := "valt-mcp-server"
+	binaryName := "valtag-mcp-server"
 	if runtime.GOOS == "windows" {
 		binaryName += ".exe"
 	}
-	// Check PATH for valt-mcp-server
+	// Check PATH for valtag-mcp-server
 	for _, dir := range filepath.SplitList(os.Getenv("PATH")) {
 		p := filepath.Join(dir, binaryName)
 		if _, err := os.Stat(p); err == nil {
 			return p, nil
 		}
 	}
-	return "", fmt.Errorf("valt-mcp-server not in PATH")
+	return "", fmt.Errorf("valtag-mcp-server not in PATH")
 }
 
 func claudeConfigPath() string {

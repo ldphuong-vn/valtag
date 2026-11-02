@@ -43,7 +43,7 @@ func (s *Service) NotifyApprovalNeeded(ctx context.Context, ownerUserID, to, req
 
 	// Email notification
 	if to != "" {
-		subject := "Valt: Access Request Needs Your Approval"
+		subject := "valtag: Access Request Needs Your Approval"
 		body := buildApprovalEmail(secretName, requester, reason, approveURL, rejectURL)
 		if s.jobStore != nil {
 			_ = s.jobStore.Enqueue(ctx, "email", to, subject, map[string]string{"body": body})
@@ -90,7 +90,7 @@ func (s *Service) NotifyAccessGranted(ctx context.Context, to, secretName string
 	if to == "" {
 		return nil
 	}
-	subject := "Valt: Access Granted"
+	subject := "valtag: Access Granted"
 	body := "Access to secret '" + secretName + "' has been granted.\nDuration: " + intToStr(durationMin) + " minutes."
 	if s.jobStore != nil {
 		return s.jobStore.Enqueue(ctx, "email", to, subject, map[string]string{"body": body})

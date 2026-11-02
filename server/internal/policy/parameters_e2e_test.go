@@ -15,7 +15,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/valt-dev/valt/server/internal/auth"
+	"github.com/ldphuong-vn/valtag/server/internal/auth"
 )
 
 // E2E Tests for Parameter-Based Policy Enforcement

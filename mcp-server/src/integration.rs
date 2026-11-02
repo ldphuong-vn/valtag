@@ -1,4 +1,4 @@
-/// Integration tests for MCP tool calls with live Valt API backend
+/// Integration tests for MCP tool calls with live valtag API backend
 /// 
 /// These tests load configuration from:
 /// 1. .env file (in vaultsaas root directory)
@@ -7,7 +7,7 @@
 ///
 /// Required variables:
 /// - VALT_API_HOST: Backend API URL (e.g., http://localhost:8080/api/v1)
-/// - VALT_AGENT_TOKEN: Valid agent bearer token
+/// - VALTAG_AGENT_TOKEN: Valid agent bearer token
 ///
 /// Run with: cargo test integration -- --nocapture
 /// (Env vars loaded automatically from .env file)
@@ -59,17 +59,17 @@ mod integration_tests {
             load_env_from_file();
 
             let api_url = env::var("VALT_API_HOST").ok();
-            let agent_token = env::var("VALT_AGENT_TOKEN").ok();
+            let agent_token = env::var("VALTAG_AGENT_TOKEN").ok();
 
             // Determine if tests should be skipped
             let skip_reason = match (&api_url, &agent_token) {
                 (None, _) => Some("VALT_API_HOST not set".to_string()),
-                (_, None) => Some("VALT_AGENT_TOKEN not set".to_string()),
+                (_, None) => Some("VALTAG_AGENT_TOKEN not set".to_string()),
                 (Some(url), Some(token)) if url.is_empty() => {
                     Some("VALT_API_HOST is empty".to_string())
                 }
                 (Some(_), Some(token)) if token.is_empty() => {
-                    Some("VALT_AGENT_TOKEN is empty".to_string())
+                    Some("VALTAG_AGENT_TOKEN is empty".to_string())
                 }
                 _ => None,
             };

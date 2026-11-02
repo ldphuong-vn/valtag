@@ -23,8 +23,8 @@ echo "Dependencies installed."
 
 # 3. Create project directory
 echo "[3/7] Setting up project directory..."
-mkdir -p /opt/valt
-cd /opt/valt
+mkdir -p /opt/valtag
+cd /opt/valtag
 
 # 4. Generate JWT RS256 keys
 echo "[4/7] Generating JWT keys..."
@@ -52,14 +52,14 @@ if [ ! -f .env ]; then
 # Generated on $(date -u +%Y-%m-%dT%H:%M:%SZ)
 
 # --- Database ---
-POSTGRES_USER=valt
+POSTGRES_USER=valtag
 POSTGRES_PASSWORD=${PG_PASS}
-POSTGRES_DB=valt
+POSTGRES_DB=valtag
 
 # --- MinIO (Object Storage) ---
 MINIO_ROOT_USER=valtminio
 MINIO_ROOT_PASSWORD=${MINIO_PASS}
-MINIO_BUCKET=valt-secrets
+MINIO_BUCKET=valtag-secrets
 
 # --- Encryption ---
 VAULT_MASTER_KEY=${MASTER_KEY}
@@ -117,11 +117,11 @@ echo ""
 echo "=== Setup Complete ==="
 echo ""
 echo "Next steps:"
-echo "  1. Copy your project files to /opt/valt/"
-echo "     scp -r . root@103.142.137.232:/opt/valt/"
+echo "  1. Copy your project files to /opt/valtag/"
+echo "     scp -r . root@103.142.137.232:/opt/valtag/"
 echo ""
 echo "  2. SSH in and start services:"
-echo "     cd /opt/valt"
+echo "     cd /opt/valtag"
 echo "     docker compose -f docker-compose.prod.yml up -d --build"
 echo ""
 echo "  3. Check status:"

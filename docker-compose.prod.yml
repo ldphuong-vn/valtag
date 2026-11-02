@@ -24,7 +24,7 @@ services:
     build:
       context: ./server
       dockerfile: Dockerfile
-    command: ["valt-migrate", "up"]
+    command: ["valtag-migrate", "up"]
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
     depends_on:
@@ -135,11 +135,11 @@ services:
     entrypoint: /bin/sh
     command: |
       -c 'while true; do
-        BACKUP_FILE="/backups/valt-$(date +%Y%m%d-%H%M%S).sql.gz"
+        BACKUP_FILE="/backups/valtag-$(date +%Y%m%d-%H%M%S).sql.gz"
         pg_dump | gzip > "$$BACKUP_FILE"
         echo "Backup created: $$BACKUP_FILE"
         # Keep only last 7 days
-        find /backups -name "valt-*.sql.gz" -mtime +7 -delete
+        find /backups -name "valtag-*.sql.gz" -mtime +7 -delete
         sleep 86400
       done'
     depends_on:

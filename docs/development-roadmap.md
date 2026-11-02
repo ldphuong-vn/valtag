@@ -77,7 +77,7 @@
 - [x] DB migrations 016-017: agent_identities, agent_tokens tables
 - [x] Go package: `internal/agent/` (service, handler, middleware)
 - [x] API routes: /projects/{id}/agents, /agents/{id}, /agents/{id}/tokens, /agents/{id}/tokens/{tid}
-- [x] MCP server: `authenticate_agent` tool, VALT_AGENT_TOKEN env, agent token keychain storage
+- [x] MCP server: `authenticate_agent` tool, VALTAG_AGENT_TOKEN env, agent token keychain storage
 - [x] Dashboard: /agents page (list + create), /agents/[id] page (detail + token management)
 
 ### Phase 10: E2E Credential Delivery [DONE - 2026-03-17]

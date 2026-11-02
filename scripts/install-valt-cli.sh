@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO="valt-dev/valt"
-BINARY="valt"
+REPO="valtag-dev/valtag"
+BINARY="valtag"
 INSTALL_DIR="/usr/local/bin"
 
 # Detect OS and architecture
@@ -24,7 +24,7 @@ fi
 ARCHIVE="${BINARY}_${OS}_${ARCH}"
 URL="https://github.com/${REPO}/releases/download/${LATEST}/${ARCHIVE}.tar.gz"
 
-echo "Installing valt ${LATEST} for ${OS}/${ARCH}..."
+echo "Installing valtag ${LATEST} for ${OS}/${ARCH}..."
 TMP=$(mktemp -d)
 trap "rm -rf $TMP" EXIT
 
@@ -33,5 +33,5 @@ tar -xzf "${TMP}/${ARCHIVE}.tar.gz" -C "$TMP"
 chmod +x "${TMP}/${BINARY}"
 mv "${TMP}/${BINARY}" "${INSTALL_DIR}/${BINARY}"
 
-echo "✓ valt installed to ${INSTALL_DIR}/${BINARY}"
-echo "  Run: valt setup"
+echo "✓ valtag installed to ${INSTALL_DIR}/${BINARY}"
+echo "  Run: valtag setup"

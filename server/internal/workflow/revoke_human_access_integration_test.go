@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/valt-dev/valt/server/internal/audit"
+	"github.com/ldphuong-vn/valtag/server/internal/audit"
 )
 
 // TestRevokeAllKillsHumanAccess covers step 5 of the revoke cascade

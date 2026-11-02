@@ -191,7 +191,7 @@ export default function AdminPage() {
         <Shield className="w-6 h-6 text-primary" />
         <div>
           <h1 className="text-xl font-bold">Super Admin</h1>
-          <p className="text-sm text-muted-foreground">System-wide monitoring for Valt operators</p>
+          <p className="text-sm text-muted-foreground">System-wide monitoring for valtag operators</p>
         </div>
       </div>
 

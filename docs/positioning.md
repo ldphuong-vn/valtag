@@ -56,4 +56,4 @@ Tên chính thức: **valtag** — viết ngắn của *"valt's agents"*, đồn
 
 Collision check 2026-11-02 (RDAP + registry chính thức): npm, PyPI, crates.io trống; GitHub 0 repo liên quan (1 hit `ValtaGamesProject` không liên quan); domain `valtag.dev/.io/.sh` đều trống.
 
-**Kế hoạch:** giữ brand "Valt" trong code/UI đến khi chạy rename trong 1 session duy nhất — đặt **ngay trước tag v0.1.0** (0 tag/0 release/0 user = cửa sổ rename miễn phí cuối cùng). Checklist: `docs/rename-plan.md`. Việc kèm khi rename: tạo org GitHub `valt-dev`, đăng ký domain sớm, check nốt `valtag.net/.org`.
+**Kế hoạch:** giữ brand "valtag" trong code/UI đến khi chạy rename trong 1 session duy nhất — đặt **ngay trước tag v0.1.0** (0 tag/0 release/0 user = cửa sổ rename miễn phí cuối cùng). Checklist: `docs/rename-plan.md`. Việc kèm khi rename: tạo org GitHub `valt-dev`, đăng ký domain sớm, check nốt `valtag.net/.org`.

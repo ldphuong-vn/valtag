@@ -72,9 +72,9 @@ func (d *Dispatcher) deliver(hook Webhook, body []byte) {
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Valt-Signature", signature)
-	req.Header.Set("X-Valt-Event", hook.Events[0])
-	req.Header.Set("X-Valt-Delivery", deliveryID)
+	req.Header.Set("X-valtag-Signature", signature)
+	req.Header.Set("X-valtag-Event", hook.Events[0])
+	req.Header.Set("X-valtag-Delivery", deliveryID)
 
 	resp, err := d.client.Do(req)
 	if err != nil {

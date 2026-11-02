@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/valt-dev/valt/valt-cli/internal/config"
+	"github.com/ldphuong-vn/valtag/valt-cli/internal/config"
 )
 
 var listCmd = &cobra.Command{

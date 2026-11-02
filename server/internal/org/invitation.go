@@ -14,8 +14,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5"
 
-	"github.com/valt-dev/valt/server/internal/auth"
-	"github.com/valt-dev/valt/server/pkg/apierror"
+	"github.com/ldphuong-vn/valtag/server/internal/auth"
+	"github.com/ldphuong-vn/valtag/server/pkg/apierror"
 )
 
 // Invitation represents a pending org membership invitation.
@@ -182,7 +182,7 @@ func (h *Handler) createInvitation(w http.ResponseWriter, r *http.Request) {
 		inviteURL := fmt.Sprintf("%s/accept-invite?token=%s", h.dashboardURL, raw)
 		body := buildInviteEmail(o.Name, inviteURL)
 		if emailErr := h.emailSender.Send(r.Context(), req.Email,
-			fmt.Sprintf("You're invited to join %s on Valt", o.Name), body); emailErr != nil {
+			fmt.Sprintf("You're invited to join %s on valtag", o.Name), body); emailErr != nil {
 			log.Printf("org invitation: send email to %s: %v", req.Email, emailErr)
 			// Continue — invitation is created; email failure is non-fatal.
 		}
@@ -377,7 +377,7 @@ func (h *Handler) acceptInvitation(w http.ResponseWriter, r *http.Request) {
 
 // buildInviteEmail formats the plain-text invite email body.
 func buildInviteEmail(orgName, inviteURL string) string {
-	return fmt.Sprintf(`You've been invited to join %s on Valt.
+	return fmt.Sprintf(`You've been invited to join %s on valtag.
 
 Click the link below to accept your invitation:
 

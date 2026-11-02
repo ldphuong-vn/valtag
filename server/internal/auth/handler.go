@@ -20,9 +20,9 @@ import (
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 
-	"github.com/valt-dev/valt/server/internal/config"
-	"github.com/valt-dev/valt/server/pkg/apierror"
-	"github.com/valt-dev/valt/server/pkg/validator"
+	"github.com/ldphuong-vn/valtag/server/internal/config"
+	"github.com/ldphuong-vn/valtag/server/pkg/apierror"
+	"github.com/ldphuong-vn/valtag/server/pkg/validator"
 )
 
 // EmailSender is the interface for sending transactional emails.

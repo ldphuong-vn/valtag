@@ -23,7 +23,7 @@ impl Default for ValtConfig {
 
 pub fn config_path() -> PathBuf {
     let home = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
-    home.join(".valt").join("config.toml")
+    home.join(".valtag").join("config.toml")
 }
 
 pub fn load_config() -> Result<ValtConfig> {
@@ -38,7 +38,7 @@ pub fn load_config() -> Result<ValtConfig> {
     };
 
     // Env overrides
-    if let Ok(url) = std::env::var("VALT_API_URL") {
+    if let Ok(url) = std::env::var("VALTAG_API_URL") {
         cfg.api_url = url;
     }
     if let Ok(pid) = std::env::var("VALT_PROJECT_ID") {

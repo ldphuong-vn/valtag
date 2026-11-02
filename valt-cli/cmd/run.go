@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/valt-dev/valt/valt-cli/internal/config"
+	"github.com/ldphuong-vn/valtag/valt-cli/internal/config"
 )
 
 var runCmd = &cobra.Command{
@@ -23,7 +23,7 @@ func init() { rootCmd.AddCommand(runCmd) }
 
 func runRun(cmd *cobra.Command, args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("command required: valt run -- <command>")
+		return fmt.Errorf("command required: valtag run -- <command>")
 	}
 	// Strip leading "--" separator if present
 	if args[0] == "--" {
@@ -64,7 +64,7 @@ func runRun(cmd *cobra.Command, args []string) error {
 		injected++
 	}
 
-	fmt.Fprintf(os.Stderr, "valt: injecting %d secret(s)\n", injected)
+	fmt.Fprintf(os.Stderr, "valtag: injecting %d secret(s)\n", injected)
 
 	child := exec.Command(args[0], args[1:]...)
 	child.Env = env

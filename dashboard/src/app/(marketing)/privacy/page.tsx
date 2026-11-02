@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy – Valt',
-  description: 'Privacy Policy for Valt, the MCP-native secret vault for AI agents.',
+  title: 'Privacy Policy – valtag',
+  description: 'Privacy Policy for valtag, the MCP-native secret vault for AI agents.',
 }
 
 export default function PrivacyPage() {
@@ -16,7 +16,7 @@ export default function PrivacyPage() {
       <p>
         This Privacy Policy explains how Turbo AI (&quot;Company&quot;, &quot;we&quot;,
         &quot;us&quot;, or &quot;our&quot;) collects, uses, and protects information when you
-        use Valt (&quot;Service&quot;) at{' '}
+        use valtag (&quot;Service&quot;) at{' '}
         <a href="https://valt.turbo.ai.vn">valt.turbo.ai.vn</a>.
       </p>
 

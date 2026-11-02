@@ -113,7 +113,7 @@ function LoginForm() {
             <Shield className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <h1 className="text-xl font-semibold tracking-tight">Valt</h1>
+            <h1 className="text-xl font-semibold tracking-tight">valtag</h1>
             <p className="text-xs text-muted-foreground">AI Secret Vault</p>
           </div>
         </div>
@@ -156,7 +156,7 @@ function LoginForm() {
           <Shield className="w-5 h-5 text-primary" />
         </div>
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Valt</h1>
+          <h1 className="text-xl font-semibold tracking-tight">valtag</h1>
           <p className="text-xs text-muted-foreground">AI Secret Vault</p>
         </div>
       </div>

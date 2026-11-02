@@ -9,10 +9,10 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/valt-dev/valt/server/internal/database"
+	"github.com/ldphuong-vn/valtag/server/internal/database"
 )
 
-// migrationAdvisoryLockKey ("valt" as int32) serializes schema migration
+// migrationAdvisoryLockKey ("valtag" as int32) serializes schema migration
 // application across concurrently running integration test helpers.
 const migrationAdvisoryLockKey = 1986353238
 

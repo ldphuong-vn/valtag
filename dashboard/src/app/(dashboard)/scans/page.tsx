@@ -40,7 +40,7 @@ export default function ScansPage() {
         <div>
           <h1 className="text-2xl font-semibold">Secret Scanner</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Scan your codebase for hardcoded secrets and import them into Valt.
+            Scan your codebase for hardcoded secrets and import them into valtag.
           </p>
         </div>
         <button
@@ -56,12 +56,12 @@ export default function ScansPage() {
         <div className="flex gap-3 p-4 rounded-lg border bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800 text-sm">
           <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
           <div className="space-y-1 text-blue-800 dark:text-blue-200">
-            <p className="font-medium">How to Scan using the Valt MCP tool</p>
+            <p className="font-medium">How to Scan using the valtag MCP tool</p>
             <p>In your AI agent (Claude, Cursor, etc.), use the <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">scan_secrets</code> tool:</p>
             <code className="block bg-blue-100 dark:bg-blue-900 px-2 py-1 rounded mt-1 font-mono text-xs">
               {'scan_secrets({ path: "/path/to/project", recursive: true })'}
             </code>
-            <p className="mt-1">Then use <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">store_secret</code> to import findings into Valt.</p>
+            <p className="mt-1">Then use <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">store_secret</code> to import findings into valtag.</p>
           </div>
         </div>
       )}

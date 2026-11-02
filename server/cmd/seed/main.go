@@ -12,7 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/argon2"
 
-	"github.com/valt-dev/valt/server/internal/audit"
+	"github.com/ldphuong-vn/valtag/server/internal/audit"
 )
 
 func main() {

@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'Terms of Service – Valt',
-  description: 'Terms of Service for Valt, the MCP-native secret vault for AI agents.',
+  title: 'Terms of Service – valtag',
+  description: 'Terms of Service for valtag, the MCP-native secret vault for AI agents.',
 }
 
 export default function TermsPage() {
@@ -14,7 +14,7 @@ export default function TermsPage() {
         Last updated: <time dateTime="2026-03-24">March 24, 2026</time>
       </p>
       <p>
-        These Terms of Service (&quot;Terms&quot;) govern your access to and use of Valt
+        These Terms of Service (&quot;Terms&quot;) govern your access to and use of valtag
         (&quot;Service&quot;), operated by Turbo AI (&quot;Company&quot;, &quot;we&quot;,
         &quot;us&quot;, or &quot;our&quot;), accessible at{' '}
         <a href="https://valt.turbo.ai.vn">valt.turbo.ai.vn</a>. By creating an account or
@@ -24,7 +24,7 @@ export default function TermsPage() {
       {/* 1 */}
       <h2>1. Description of Service</h2>
       <p>
-        Valt is a secret management platform designed for AI agents and their operators. The
+        valtag is a secret management platform designed for AI agents and their operators. The
         Service provides:
       </p>
       <ul>

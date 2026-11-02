@@ -8,7 +8,7 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
-// Config holds CLI configuration persisted to ~/.valt/config.toml.
+// Config holds CLI configuration persisted to ~/.valtag/config.toml.
 type Config struct {
 	APIURL    string `toml:"api_url"`
 	ProjectID string `toml:"project_id,omitempty"`
@@ -16,7 +16,7 @@ type Config struct {
 
 func defaultAPIURL() string { return "https://api.valt.dev" }
 
-// Load reads config from ~/.valt/config.toml. Returns defaults if file doesn't exist.
+// Load reads config from ~/.valtag/config.toml. Returns defaults if file doesn't exist.
 func Load() (*Config, error) {
 	cfg := &Config{APIURL: defaultAPIURL()}
 	path, err := configPath()
@@ -30,7 +30,7 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("reading config: %w", err)
 	}
 	// Env overrides
-	if v := os.Getenv("VALT_API_URL"); v != "" {
+	if v := os.Getenv("VALTAG_API_URL"); v != "" {
 		cfg.APIURL = v
 	}
 	if v := os.Getenv("VALT_PROJECT_ID"); v != "" {
@@ -39,7 +39,7 @@ func Load() (*Config, error) {
 	return cfg, nil
 }
 
-// Save writes config to ~/.valt/config.toml, creating the directory if needed.
+// Save writes config to ~/.valtag/config.toml, creating the directory if needed.
 func Save(cfg *Config) error {
 	path, err := configPath()
 	if err != nil {
@@ -61,5 +61,5 @@ func configPath() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("finding home dir: %w", err)
 	}
-	return filepath.Join(home, ".valt", "config.toml"), nil
+	return filepath.Join(home, ".valtag", "config.toml"), nil
 }

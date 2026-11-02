@@ -11,8 +11,8 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/valt-dev/valt/server/internal/database"
-	"github.com/valt-dev/valt/server/internal/testutil"
+	"github.com/ldphuong-vn/valtag/server/internal/database"
+	"github.com/ldphuong-vn/valtag/server/internal/testutil"
 )
 
 // newAuditIntegrationDB provisions an isolated schema with all migrations

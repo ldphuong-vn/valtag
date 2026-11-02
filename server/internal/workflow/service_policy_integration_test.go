@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/valt-dev/valt/server/internal/policy"
+	"github.com/ldphuong-vn/valtag/server/internal/policy"
 )
 
 func TestCreateRequest_PolicyV2BindingOverridesDefaults(t *testing.T) {

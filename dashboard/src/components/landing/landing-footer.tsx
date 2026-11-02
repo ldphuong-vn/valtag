@@ -37,7 +37,7 @@ export function LandingFooter() {
               >
                 <Shield className="h-4 w-4" style={{ color: 'oklch(0.6 0.25 270)' }} />
               </div>
-              Valt
+              valtag
             </div>
             <p className="mt-3 text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.4)' }}>
               MCP-native secret vault with human-in-the-loop approval for AI agents.
@@ -69,7 +69,7 @@ export function LandingFooter() {
           className="mt-12 pt-6 text-center text-xs"
           style={{ borderTop: '1px solid rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.25)' }}
         >
-          &copy; {new Date().getFullYear()} Valt. All rights reserved.
+          &copy; {new Date().getFullYear()} valtag. All rights reserved.
         </div>
       </div>
     </footer>

@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/valt-dev/valt/server/pkg/apierror"
+	"github.com/ldphuong-vn/valtag/server/pkg/apierror"
 )
 
-// CLISessionHandler handles short-lived OAuth token exchange for the valt CLI.
+// CLISessionHandler handles short-lived OAuth token exchange for the valtag CLI.
 type CLISessionHandler struct {
 	pool    *pgxpool.Pool
 	baseURL string

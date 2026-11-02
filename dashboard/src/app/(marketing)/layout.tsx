@@ -9,7 +9,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
         <div className="mx-auto flex h-14 max-w-4xl items-center justify-between px-4 sm:px-6">
           <Link href="/" className="flex items-center gap-2 text-base font-semibold">
             <Shield className="h-4 w-4 text-primary" />
-            Valt
+            valtag
           </Link>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <Link href="/terms" className="transition-colors hover:text-foreground">Terms</Link>

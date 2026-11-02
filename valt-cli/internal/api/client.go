@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-// Client talks to the Valt REST API.
+// Client talks to the valtag REST API.
 type Client struct {
 	baseURL string
 	token   string

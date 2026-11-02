@@ -16,7 +16,7 @@ test-unit: ## Run Go unit tests (no DB)
 	cd server && go test ./internal/... ./pkg/... -v -count=1
 
 test-integration: ## Run Go integration tests against a real Postgres (DATABASE_URL, falls back to the compose default)
-	cd server && DATABASE_URL=$${DATABASE_URL:-postgres://valt:valt_dev_password@localhost:5432/valt?sslmode=disable} go test ./internal/... ./pkg/... -count=1 -timeout 10m
+	cd server && DATABASE_URL=$${DATABASE_URL:-postgres://valt:valtag_dev_password@localhost:5432/valt?sslmode=disable} go test ./internal/... ./pkg/... -count=1 -timeout 10m
 
 test-dashboard: ## Run dashboard tests
 	cd dashboard && npm test

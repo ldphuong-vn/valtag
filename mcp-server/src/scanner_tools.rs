@@ -1,10 +1,10 @@
 use serde_json::{json, Value};
-use crate::client::ValtClient;
+use crate::client::ValtagClient;
 use crate::error::Result;
 use crate::scanner;
 use crate::tools;
 
-pub async fn tool_scan_secrets(args: &Value, client: &ValtClient) -> Result<Value> {
+pub async fn tool_scan_secrets(args: &Value, client: &ValtagClient) -> Result<Value> {
     let path = args["path"].as_str()
         .ok_or_else(|| crate::error::ValtError::Protocol("path required".into()))?;
     // Validate path safety — reject absolute paths and traversal sequences
@@ -51,7 +51,7 @@ pub async fn tool_scan_secrets(args: &Value, client: &ValtClient) -> Result<Valu
     }))
 }
 
-pub async fn tool_store_secret(args: &Value, client: &ValtClient) -> Result<Value> {
+pub async fn tool_store_secret(args: &Value, client: &ValtagClient) -> Result<Value> {
     let name = args["name"].as_str()
         .ok_or_else(|| crate::error::ValtError::Protocol("name required".into()))?;
     let credential_type = args["credential_type"].as_str()
@@ -98,7 +98,7 @@ mod tests {
     async fn test_call_unknown_tool_errors() {
         use crate::config::ValtConfig;
         let config = ValtConfig::default();
-        let result = crate::client::ValtClient::new(config.api_url, "test_token".into());
+        let result = crate::client::ValtagClient::new(config.api_url, "test_token".into());
         if let Ok(client) = result {
             let err = tools::call_tool("nonexistent_tool", &json!({}), &client).await;
             assert!(err.is_err());

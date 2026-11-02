@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/valt-dev/valt/server/pkg/apierror"
-	"github.com/valt-dev/valt/server/pkg/validator"
+	"github.com/ldphuong-vn/valtag/server/pkg/apierror"
+	"github.com/ldphuong-vn/valtag/server/pkg/validator"
 )
 
 type forgotPasswordRequest struct {
@@ -78,10 +78,10 @@ func (h *Handler) processForgotPassword(ctx context.Context, email string) error
 
 	resetURL := fmt.Sprintf("%s/reset-password?token=%s", h.dashboardURL, raw)
 	body := fmt.Sprintf(
-		"You requested a password reset for your Valt account.\n\nClick the link below to reset your password:\n\n%s\n\nThis link expires in 1 hour and can only be used once.\n\nIf you did not request a password reset, you can ignore this email.",
+		"You requested a password reset for your valtag account.\n\nClick the link below to reset your password:\n\n%s\n\nThis link expires in 1 hour and can only be used once.\n\nIf you did not request a password reset, you can ignore this email.",
 		resetURL,
 	)
-	return h.emailSender.Send(ctx, email, "Reset your Valt password", body)
+	return h.emailSender.Send(ctx, email, "Reset your valtag password", body)
 }
 
 // resetPassword handles POST /auth/reset-password

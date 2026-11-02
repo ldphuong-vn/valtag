@@ -174,7 +174,7 @@ func (m *MockMCPServer) handleToolsList(req MCPRequestPayload) MCPResponsePayloa
 	tools := []map[string]interface{}{
 		{
 			"name":        "read_secret",
-			"description": "Reads a secret value from Valt",
+			"description": "Reads a secret value from valtag",
 			"inputSchema": map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
@@ -226,7 +226,7 @@ func (m *MockMCPServer) handleToolsList(req MCPRequestPayload) MCPResponsePayloa
 func (m *MockMCPServer) handleResourcesList(req MCPRequestPayload) MCPResponsePayload {
 	resources := []map[string]interface{}{
 		{
-			"uri":      "valt://secrets/list",
+			"uri":      "valtag://secrets/list",
 			"name":     "List Secrets",
 			"mimeType": "application/json",
 		},

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/valt-dev/valt/server/internal/testutil"
+	"github.com/ldphuong-vn/valtag/server/internal/testutil"
 )
 
 // TestMockMCPServerBasicOperation tests basic MCP server operations

@@ -12,10 +12,10 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/valt-dev/valt/server/internal/audit"
-	"github.com/valt-dev/valt/server/internal/auth"
-	"github.com/valt-dev/valt/server/internal/policy"
-	"github.com/valt-dev/valt/server/internal/vault"
+	"github.com/ldphuong-vn/valtag/server/internal/audit"
+	"github.com/ldphuong-vn/valtag/server/internal/auth"
+	"github.com/ldphuong-vn/valtag/server/internal/policy"
+	"github.com/ldphuong-vn/valtag/server/internal/vault"
 )
 
 const outsiderID = "00000000-0000-0000-0000-000000000103"

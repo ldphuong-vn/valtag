@@ -1,7 +1,7 @@
 # Design Guidelines
 
 ## Brand
-- **Name**: Valt
+- **Name**: valtag
 - **Tagline**: AI Secret Vault with Human-in-the-Loop Approval
 - **Tone**: Professional, security-focused, developer-friendly
 

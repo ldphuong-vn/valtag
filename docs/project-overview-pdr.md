@@ -1,7 +1,7 @@
-# Valt - Product Development Requirements
+# valtag - Product Development Requirements
 
 ## Product
-**Valt** - MCP-native secret vault with human-in-the-loop approval workflow for AI agents.
+**valtag** - MCP-native secret vault with human-in-the-loop approval workflow for AI agents.
 
 ## Problem
 AI agents need access to secrets (API keys, DB credentials) but developers either hardcode them or paste into chat. No approval workflow, no time-limited access, no audit trail.

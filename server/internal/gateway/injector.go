@@ -39,7 +39,7 @@ func InjectCredential(req *http.Request, route *ProxyRoute, secretValue string) 
 	}
 }
 
-// ScanForPlaceholder checks all request header values for a valt_pk_ placeholder.
+// ScanForPlaceholder checks all request header values for a valtag_pk_ placeholder.
 func ScanForPlaceholder(req *http.Request) string {
 	for _, values := range req.Header {
 		for _, v := range values {
@@ -63,9 +63,9 @@ func StripPlaceholder(req *http.Request, placeholder string) {
 	}
 }
 
-// extractPlaceholder finds a valt_pk_ token within a header value.
+// extractPlaceholder finds a valtag_pk_ token within a header value.
 func extractPlaceholder(value string) string {
-	const prefix = "valt_pk_"
+	const prefix = "valtag_pk_"
 	idx := strings.Index(value, prefix)
 	if idx < 0 {
 		return ""

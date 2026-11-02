@@ -12,14 +12,14 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/valt-dev/valt/server/internal/agent"
-	"github.com/valt-dev/valt/server/internal/audit"
-	"github.com/valt-dev/valt/server/internal/auth"
-	"github.com/valt-dev/valt/server/internal/notify"
-	"github.com/valt-dev/valt/server/internal/vault"
-	"github.com/valt-dev/valt/server/pkg/apierror"
-	"github.com/valt-dev/valt/server/pkg/crypto"
-	"github.com/valt-dev/valt/server/pkg/validator"
+	"github.com/ldphuong-vn/valtag/server/internal/agent"
+	"github.com/ldphuong-vn/valtag/server/internal/audit"
+	"github.com/ldphuong-vn/valtag/server/internal/auth"
+	"github.com/ldphuong-vn/valtag/server/internal/notify"
+	"github.com/ldphuong-vn/valtag/server/internal/vault"
+	"github.com/ldphuong-vn/valtag/server/pkg/apierror"
+	"github.com/ldphuong-vn/valtag/server/pkg/crypto"
+	"github.com/ldphuong-vn/valtag/server/pkg/validator"
 )
 
 // Handler serves workflow HTTP endpoints.
@@ -392,7 +392,7 @@ func (h *Handler) GetCredential(w http.ResponseWriter, r *http.Request) {
 
 // GetCredentialBySecret handles GET /credentials/by-secret/{secret_id}:
 // delivers the caller's most recent active credential for that secret, so
-// `valt get <name>` reuses an approved session instead of minting a new
+// `valtag get <name>` reuses an approved session instead of minting a new
 // access request on every run.
 func (h *Handler) GetCredentialBySecret(w http.ResponseWriter, r *http.Request) {
 	secretID := chi.URLParam(r, "secret_id")

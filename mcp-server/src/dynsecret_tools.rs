@@ -1,8 +1,8 @@
 use serde_json::{json, Value};
-use crate::client::ValtClient;
+use crate::client::ValtagClient;
 use crate::error::Result;
 
-pub async fn tool_request_dynamic_secret(args: &Value, client: &ValtClient) -> Result<Value> {
+pub async fn tool_request_dynamic_secret(args: &Value, client: &ValtagClient) -> Result<Value> {
     let provider_id = args["provider_id"].as_str()
         .ok_or_else(|| crate::error::ValtError::Protocol("provider_id required".into()))?;
     let ttl = args.get("ttl_seconds").and_then(|v| v.as_u64()).unwrap_or(300) as u32;

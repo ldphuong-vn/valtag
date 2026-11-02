@@ -1,4 +1,4 @@
-module github.com/valt-dev/valt/server
+module github.com/ldphuong-vn/valtag/server
 
 go 1.25.0
 

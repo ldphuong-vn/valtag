@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/valt-dev/valt/valt-cli/internal/keychain"
+	"github.com/ldphuong-vn/valtag/valt-cli/internal/keychain"
 )
 
 var whoamiCmd = &cobra.Command{
@@ -22,13 +22,13 @@ func init() { rootCmd.AddCommand(whoamiCmd) }
 func runWhoami(cmd *cobra.Command, args []string) error {
 	token, err := keychain.GetToken()
 	if err != nil || token == "" {
-		fmt.Println("Not logged in. Run 'valt setup' to authenticate.")
+		fmt.Println("Not logged in. Run 'valtag setup' to authenticate.")
 		return nil
 	}
 
 	claims, err := decodeJWTClaims(token)
 	if err != nil {
-		fmt.Println("Stored token is malformed. Run 'valt setup' to re-authenticate.")
+		fmt.Println("Stored token is malformed. Run 'valtag setup' to re-authenticate.")
 		return nil
 	}
 

@@ -21,7 +21,7 @@ export function LandingNavbar() {
           >
             <Shield className="h-4 w-4" style={{ color: 'oklch(0.6 0.25 270)' }} />
           </div>
-          Valt
+          valtag
         </Link>
 
         {/* Center links */}

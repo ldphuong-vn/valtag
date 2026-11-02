@@ -3,7 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
-Valt is an MCP-native secret vault with human-in-the-loop approval for AI agents. Monorepo: Go backend, Next.js dashboard, Rust MCP server.
+valtag is an MCP-native secret vault with human-in-the-loop approval for AI agents. Monorepo: Go backend, Next.js dashboard, Rust MCP server.
 
 ## Commands
 
@@ -90,7 +90,7 @@ For routes scoped by non-project IDs (scan_id, provider_id, lease_id), handlers 
 Next.js 15 App Router with `(auth)` and `(dashboard)` route groups. All authenticated pages live under `(dashboard)`. Session is read from `valt_access_token` cookie via `src/lib/auth.ts:getSession()`. No client-side token storage.
 
 ### MCP server (`mcp-server/`)
-Rust binary (`valt-mcp-server`). Runs on developer machine alongside the AI agent. Communicates via stdio JSON-RPC 2.0 (default) or HTTP. Connects to the Go API with a stored agent token. Path traversal prevention: rejects absolute paths, Windows drive letters, `..`, paths > 500 chars.
+Rust binary (`valtag-mcp-server`). Runs on developer machine alongside the AI agent. Communicates via stdio JSON-RPC 2.0 (default) or HTTP. Connects to the Go API with a stored agent token. Path traversal prevention: rejects absolute paths, Windows drive letters, `..`, paths > 500 chars.
 
 ### Database migrations
 Sequential numbered SQL files in `server/internal/database/migrations/`. Currently at 000037. Migration runner: `valt-migrate` binary (`server/cmd/migrate/`).

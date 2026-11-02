@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/valt-dev/valt/valt-cli/internal/config"
+	"github.com/ldphuong-vn/valtag/valt-cli/internal/config"
 )
 
 var requestCmd = &cobra.Command{
@@ -67,10 +67,10 @@ func runRequest(cmd *cobra.Command, args []string) error {
 
 	fmt.Printf("Request ID: %s\nStatus:     %s\n", req.ID, req.Status)
 	if req.Status == "pending" {
-		fmt.Printf("\nCheck status:  valt status %s\n", req.ID)
+		fmt.Printf("\nCheck status:  valtag status %s\n", req.ID)
 		fmt.Println("Approvers have been notified via email/Slack.")
 	} else if req.Status == "approved" {
-		fmt.Printf("\nAuto-approved. Get value:  valt get %s\n", name)
+		fmt.Printf("\nAuto-approved. Get value:  valtag get %s\n", name)
 	}
 	return nil
 }

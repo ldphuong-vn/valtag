@@ -9,9 +9,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/valt-dev/valt/server/internal/auth"
-	"github.com/valt-dev/valt/server/internal/rbac"
-	"github.com/valt-dev/valt/server/pkg/apierror"
+	"github.com/ldphuong-vn/valtag/server/internal/auth"
+	"github.com/ldphuong-vn/valtag/server/internal/rbac"
+	"github.com/ldphuong-vn/valtag/server/pkg/apierror"
 )
 
 // Handler exposes agent identity HTTP endpoints.

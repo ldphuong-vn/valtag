@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/valt-dev/valt/server/internal/dynsecret"
+	"github.com/ldphuong-vn/valtag/server/internal/dynsecret"
 )
 
-// derivedKeyAuth resolves a Valt-derived API key presented on a proxied
+// derivedKeyAuth resolves a valtag-derived API key presented on a proxied
 // request to its active lease, enforcing agent binding. Returns an error when
 // the key is unknown, revoked, expired, or used by the wrong agent.
 func derivedKeyAuth(ctx context.Context, dynSvc *dynsecret.Service, rawKey, agentID string) (*dynsecret.LeaseInfo, error) {

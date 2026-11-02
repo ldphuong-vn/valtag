@@ -10,9 +10,9 @@ import (
 	"time"
 )
 
-// DerivedKeyPrefix marks a credential as a Valt-derived API key, so the
+// DerivedKeyPrefix marks a credential as a valtag-derived API key, so the
 // gateway can tell it apart from a real upstream key or an agent token.
-const DerivedKeyPrefix = "valt_dk_"
+const DerivedKeyPrefix = "valtag_dk_"
 
 // DerivedKeyProvider issues short-lived API keys derived from a master
 // provider key. Use case: cấp AI API key cho nhân viên/agent — master key
@@ -20,7 +20,7 @@ const DerivedKeyPrefix = "valt_dk_"
 //
 // The derived key is HMAC-SHA256(master_key, random nonce): it cannot be
 // reversed to recover the master key, and it is not accepted by any upstream
-// API — it only means something to Valt, which validates it by hash lookup
+// API — it only means something to valtag, which validates it by hash lookup
 // (dynamic_leases.key_hash) and swaps in the real master key at the gateway.
 // Config keys: master_key (required), upstream (informational label).
 type DerivedKeyProvider struct {
@@ -44,7 +44,7 @@ func hashDerivedKey(rawKey string) string {
 }
 
 // Create issues a new derived API key. Nothing is provisioned upstream: the
-// credential exists only as a lease row inside Valt.
+// credential exists only as a lease row inside valtag.
 func (p *DerivedKeyProvider) Create(ctx context.Context, req LeaseRequest) (*Lease, error) {
 	masterKey := p.config.Config["master_key"]
 	if masterKey == "" {
@@ -72,7 +72,7 @@ func (p *DerivedKeyProvider) Create(ctx context.Context, req LeaseRequest) (*Lea
 	}, nil
 }
 
-// Revoke is a no-op: the derived key lives only in Valt's database, so
+// Revoke is a no-op: the derived key lives only in valtag's database, so
 // marking the lease revoked is the entire revocation.
 func (p *DerivedKeyProvider) Revoke(ctx context.Context, leaseID string) error {
 	return nil

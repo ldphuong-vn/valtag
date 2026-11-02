@@ -2,7 +2,7 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in Valt, please report it responsibly.
+If you discover a security vulnerability in valtag, please report it responsibly.
 
 **Email**: security@valt.dev
 
@@ -16,7 +16,7 @@ We will acknowledge receipt within 48 hours and provide a detailed response with
 
 ## Security Model
 
-Valt uses a zero-knowledge architecture:
+valtag uses a zero-knowledge architecture:
 - Secrets encrypted client-side with AES-256-GCM
 - Envelope encryption (DEK wrapped by user master key)
 - Server never sees plaintext secrets or master keys

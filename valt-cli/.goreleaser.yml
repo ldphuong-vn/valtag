@@ -1,16 +1,16 @@
 version: 2
 
-project_name: valt
+project_name: valtag
 
 before:
   hooks:
     - go mod tidy
 
 builds:
-  - id: valt
+  - id: valtag
     dir: valt-cli
     main: .
-    binary: valt
+    binary: valtag
     env:
       - CGO_ENABLED=0
     goos:
@@ -25,8 +25,8 @@ builds:
         goarch: arm64
 
 archives:
-  - id: valt
-    builds: [valt]
+  - id: valtag
+    builds: [valtag]
     name_template: "valt_{{ .Os }}_{{ .Arch }}"
     format_overrides:
       - goos: windows
@@ -37,8 +37,8 @@ checksum:
 
 release:
   github:
-    owner: valt-dev
-    name: valt
+    owner: valtag-dev
+    name: valtag
 
 changelog:
   sort: asc

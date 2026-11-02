@@ -1,5 +1,5 @@
 package main
 
-import "github.com/valt-dev/valt/valt-cli/cmd"
+import "github.com/ldphuong-vn/valtag/valt-cli/cmd"
 
 func main() { cmd.Execute() }

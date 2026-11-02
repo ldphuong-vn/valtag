@@ -175,7 +175,7 @@
 
 **Phase 14 — CLI + SDKs**
 - `server/cmd/valt/` — `valt` CLI (cobra): `login`, `secrets list/create`, `agents list/create`, `scan`, `run`; config at `~/.valt/config.json`
-- `sdk/go/` — Go SDK (stdlib only, module `github.com/valt-dev/valt-go`)
+- `sdk/go/` — Go SDK (stdlib only, module `github.com/ldphuong-vn/valtag-go`)
 - `sdk/python/` — Python SDK (urllib only, zero dependencies)
 
 **Phase 15 — Cloud Free Tier**

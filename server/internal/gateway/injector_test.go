@@ -85,11 +85,11 @@ func TestInjectCredential_Query(t *testing.T) {
 
 func TestScanForPlaceholder(t *testing.T) {
 	req, _ := http.NewRequest("GET", "http://example.com", nil)
-	req.Header.Set("Authorization", "Bearer valt_pk_abc123def456")
+	req.Header.Set("Authorization", "Bearer valtag_pk_abc123def456")
 
 	got := ScanForPlaceholder(req)
-	if got != "valt_pk_abc123def456" {
-		t.Errorf("ScanForPlaceholder = %q, want %q", got, "valt_pk_abc123def456")
+	if got != "valtag_pk_abc123def456" {
+		t.Errorf("ScanForPlaceholder = %q, want %q", got, "valtag_pk_abc123def456")
 	}
 }
 
@@ -105,9 +105,9 @@ func TestScanForPlaceholder_None(t *testing.T) {
 
 func TestStripPlaceholder(t *testing.T) {
 	req, _ := http.NewRequest("GET", "http://example.com", nil)
-	req.Header.Set("Authorization", "Bearer valt_pk_test123")
+	req.Header.Set("Authorization", "Bearer valtag_pk_test123")
 
-	StripPlaceholder(req, "valt_pk_test123")
+	StripPlaceholder(req, "valtag_pk_test123")
 
 	got := req.Header.Get("Authorization")
 	if got != "Bearer " {
@@ -116,9 +116,9 @@ func TestStripPlaceholder(t *testing.T) {
 }
 
 func TestExtractPlaceholder_InMiddleOfValue(t *testing.T) {
-	got := extractPlaceholder("Bearer valt_pk_xyz789 extra")
-	if got != "valt_pk_xyz789" {
-		t.Errorf("extractPlaceholder = %q, want %q", got, "valt_pk_xyz789")
+	got := extractPlaceholder("Bearer valtag_pk_xyz789 extra")
+	if got != "valtag_pk_xyz789" {
+		t.Errorf("extractPlaceholder = %q, want %q", got, "valtag_pk_xyz789")
 	}
 }
 

@@ -11,7 +11,7 @@ const geistSans = Geist({ subsets: ['latin'], variable: '--font-geist-sans' })
 const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono' })
 
 export const metadata: Metadata = {
-  title: 'Valt - AI Secret Vault',
+  title: 'valtag - AI Secret Vault',
   description: 'Human-in-the-loop secret management for AI agents',
 }
 

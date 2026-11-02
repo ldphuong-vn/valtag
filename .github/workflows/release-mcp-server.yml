@@ -1,4 +1,4 @@
-name: Release valt MCP server
+name: Release valtag MCP server
 
 # Builds the Rust MCP server for all supported platforms and attaches the
 # binaries + SHA256 checksums to a GitHub Release when a mcp/v* tag is pushed.
@@ -58,7 +58,7 @@ jobs:
 
       - name: Strip binary
         if: runner.os != 'Windows'
-        run: strip mcp-server/target/${{ matrix.target }}/release/valt-mcp-server
+        run: strip mcp-server/target/${{ matrix.target }}/release/valtag-mcp-server
 
       - name: Package and checksum
         shell: bash
@@ -66,8 +66,8 @@ jobs:
           mkdir -p dist
           suffix=""
           if [ "${{ runner.os }}" = "Windows" ]; then suffix=".exe"; fi
-          artifact="valt-mcp-server-${{ matrix.target }}${suffix}"
-          cp "mcp-server/target/${{ matrix.target }}/release/valt-mcp-server${suffix}" "dist/${artifact}"
+          artifact="valtag-mcp-server-${{ matrix.target }}${suffix}"
+          cp "mcp-server/target/${{ matrix.target }}/release/valtag-mcp-server${suffix}" "dist/${artifact}"
           cd dist
           if command -v sha256sum >/dev/null 2>&1; then
             sha256sum "${artifact}" > "${artifact}.sha256"
@@ -77,7 +77,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: valt-mcp-server-${{ matrix.target }}
+          name: valtag-mcp-server-${{ matrix.target }}
           path: dist/*
 
   release:
@@ -94,9 +94,9 @@ jobs:
         working-directory: dist
         run: |
           if command -v sha256sum >/dev/null 2>&1; then
-            sha256sum valt-mcp-server-* > SHA256SUMS
+            sha256sum valtag-mcp-server-* > SHA256SUMS
           else
-            shasum -a 256 valt-mcp-server-* > SHA256SUMS
+            shasum -a 256 valtag-mcp-server-* > SHA256SUMS
           fi
           cat SHA256SUMS
 
@@ -104,5 +104,5 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            dist/valt-mcp-server-*
+            dist/valtag-mcp-server-*
             dist/SHA256SUMS

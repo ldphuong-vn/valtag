@@ -38,12 +38,12 @@ export default function Sidebar() {
     }
     updateHref()
     window.addEventListener('storage', updateHref)
-    window.addEventListener('valt:project-changed', updateHref)
-    window.addEventListener('valt:workspace-changed', updateHref)
+    window.addEventListener('valtag:project-changed', updateHref)
+    window.addEventListener('valtag:workspace-changed', updateHref)
     return () => {
       window.removeEventListener('storage', updateHref)
-      window.removeEventListener('valt:project-changed', updateHref)
-      window.removeEventListener('valt:workspace-changed', updateHref)
+      window.removeEventListener('valtag:project-changed', updateHref)
+      window.removeEventListener('valtag:workspace-changed', updateHref)
     }
   }, [])
 
@@ -55,7 +55,7 @@ export default function Sidebar() {
         <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
           <Shield className="w-4 h-4 text-primary" />
         </div>
-        <span className="font-semibold text-sm">Valt</span>
+        <span className="font-semibold text-sm">valtag</span>
       </div>
 
       {/* Org/Workspace context */}

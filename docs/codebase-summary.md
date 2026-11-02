@@ -115,7 +115,7 @@ vaultsaas/
 │   └── README.md
 │
 ├── sdk/
-│   ├── go/                  # Go SDK (stdlib only, go.mod: github.com/valt-dev/valt-go) (Phase 14)
+│   ├── go/                  # Go SDK (stdlib only, go.mod: github.com/ldphuong-vn/valtag-go) (Phase 14)
 │   └── python/              # Python SDK (urllib only, no external deps) (Phase 14)
 │
 ├── docs/                    # Project documentation
@@ -173,7 +173,7 @@ vaultsaas/
 - **server**: Phase 1.3-1.5 + Phase 2 complete; Google OAuth2, org/workspace/project hierarchy, agent identity, secret scanner, dynamic secrets, RBAC, rate limiting, usage/free tier, approval channels (email action tokens, Slack Block Kit, Telegram bot), custom approval policies (3-level hierarchy: secret → project → tier defaults), policy GET|PUT endpoints; security hardening (AES-256-GCM on provider configs + lease credentials, RBAC, rate limiting, rejection_reason persistence); migrations 000001-000028; 74+ Go unit tests passing
 - **dashboard**: Full Next.js App Router — sign-in, secrets CRUD, approvals, audit, orgs, projects (with policy editor), agents, scans, providers, settings/upgrade; BFF proxy; PolicyEditor, SecretPolicySection, ProjectPolicySection components; 19 vitest tests passing
 - **mcp-server**: 8 MCP tools, 3 resources; stdio + HTTP/SSE dual transport (axum); Bearer auth; 17 regex scanner patterns; OS keychain auth; 11+ unit tests passing
-- **sdk**: Go SDK (`github.com/valt-dev/valt-go`, stdlib only) and Python SDK (urllib only)
+- **sdk**: Go SDK (`github.com/ldphuong-vn/valtag-go`, stdlib only) and Python SDK (urllib only)
 - **cli**: `valt-cli` binary (Go, Cobra) standalone agent-free credential access; OAuth device-like flow with browser redirect, OS keychain integration, auto-detect MCP server for installation, config at `~/.valt/config.json`, cross-platform builds via goreleaser
 - **testing**: Makefile targets `test-unit`, `test-integration`, `test-dashboard`, `test-mcp`, `security`; `.golangci.yml` enabled
 - **infra**: Full Docker Compose (dev/prod) with JWT key volume mount, optional Redis, Caddy with CSP/security headers

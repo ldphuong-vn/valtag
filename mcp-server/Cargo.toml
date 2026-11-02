@@ -1,11 +1,11 @@
 [package]
-name = "valt-mcp-server"
+name = "valtag-mcp-server"
 version = "0.1.0"
 edition = "2021"
 description = "Valt MCP Server - Local secret vault integration for AI agents"
 
 [[bin]]
-name = "valt-mcp-server"
+name = "valtag-mcp-server"
 path = "src/main.rs"
 
 [dependencies]

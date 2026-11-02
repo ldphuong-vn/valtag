@@ -10,12 +10,12 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/database/pgx/v5"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 
-	"github.com/valt-dev/valt/server/internal/database"
+	"github.com/ldphuong-vn/valtag/server/internal/database"
 )
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Println("Usage: valt-migrate <up|down>")
+		fmt.Println("Usage: valtag-migrate <up|down>")
 		os.Exit(1)
 	}
 
@@ -51,7 +51,7 @@ func main() {
 		}
 		log.Println("Rolled back one migration")
 	default:
-		fmt.Printf("Unknown command: %s\nUsage: valt-migrate <up|down>\n", cmd)
+		fmt.Printf("Unknown command: %s\nUsage: valtag-migrate <up|down>\n", cmd)
 		os.Exit(1)
 	}
 }

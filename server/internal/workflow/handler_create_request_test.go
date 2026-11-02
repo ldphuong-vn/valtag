@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/valt-dev/valt/server/internal/agent"
-	"github.com/valt-dev/valt/server/internal/auth"
+	"github.com/ldphuong-vn/valtag/server/internal/agent"
+	"github.com/ldphuong-vn/valtag/server/internal/auth"
 )
 
 // TestCreateRequest_NoIdentity_BareContext verifies that a bare context

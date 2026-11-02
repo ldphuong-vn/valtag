@@ -1,4 +1,4 @@
-module github.com/valt-dev/valt/valt-cli
+module github.com/ldphuong-vn/valtag/valt-cli
 
 go 1.26.1
 

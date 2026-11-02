@@ -12,11 +12,11 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/valt-dev/valt/server/internal/admin"
-	"github.com/valt-dev/valt/server/internal/auth"
-	"github.com/valt-dev/valt/server/internal/rbac"
-	"github.com/valt-dev/valt/server/pkg/apierror"
-	"github.com/valt-dev/valt/server/pkg/validator"
+	"github.com/ldphuong-vn/valtag/server/internal/admin"
+	"github.com/ldphuong-vn/valtag/server/internal/auth"
+	"github.com/ldphuong-vn/valtag/server/internal/rbac"
+	"github.com/ldphuong-vn/valtag/server/pkg/apierror"
+	"github.com/ldphuong-vn/valtag/server/pkg/validator"
 )
 
 // Handler serves audit log query endpoints.
@@ -105,7 +105,7 @@ func (h *Handler) exportCSV(w http.ResponseWriter, r *http.Request) {
 	defer rows.Close()
 
 	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
-	w.Header().Set("Content-Disposition", `attachment; filename="valt-audit-export.csv"`)
+	w.Header().Set("Content-Disposition", `attachment; filename="valtag-audit-export.csv"`)
 	w.WriteHeader(http.StatusOK)
 
 	cw := csv.NewWriter(w)

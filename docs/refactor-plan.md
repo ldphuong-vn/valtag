@@ -1,8 +1,8 @@
-# Valt — Kế hoạch refactor (soạn 2026-08-31)
+# valtag — Kế hoạch refactor (soạn 2026-08-31)
 
 Nguồn: rà soát code trực tiếp ngày 2026-08-31 + thảo luận chiến lược
 (xem [decisions.md](decisions.md) cho lý do từng hướng). Mục tiêu refactor:
-biến Valt từ "vault có SaaS layer dở dang" thành **MCP credential gate tự host,
+biến valtag từ "vault có SaaS layer dở dang" thành **MCP credential gate tự host,
 thuần Apache-2.0**, với ba key features: dynamic lease, revoke cascade, audit 4W1H.
 
 ## A. Kết quả rà code (chân dung hiện trạng)
@@ -173,9 +173,9 @@ Deliverable của §C: e2e "agent xin → duyệt → nhận lease TTL ngắn". 
 
 1. **Provider `derived_api_key`** (`internal/dynsecret/derived_key.go`): config
    giữ `master_key` (key AI API của công ty). `Create` trả
-   `valt_dk_<HMAC-SHA256(master_key, nonce 16B)>` — một chiều, không suy ra
+   `valtag_dk_<HMAC-SHA256(master_key, nonce 16B)>` — một chiều, không suy ra
    được master key, và upstream thật không chấp nhận key này: nó chỉ có nghĩa
-   với Valt. Lease lưu `key_hash` (SHA256 hex) trong `dynamic_leases` để tra
+   với valtag. Lease lưu `key_hash` (SHA256 hex) trong `dynamic_leases` để tra
    O(1); raw key chỉ nằm trong `secret_data_enc` đã mã hóa. `Revoke`/`Renew`
    là no-op phía backend — DB là nguồn chân lý (revoke = đánh dấu `revoked_at`).
 2. **Verify + tiêu thụ key dẫn xuất**:

@@ -10,11 +10,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/valt-dev/valt/server/internal/agent"
-	"github.com/valt-dev/valt/server/internal/audit"
-	"github.com/valt-dev/valt/server/internal/dynsecret"
-	"github.com/valt-dev/valt/server/internal/vault"
-	"github.com/valt-dev/valt/server/pkg/crypto"
+	"github.com/ldphuong-vn/valtag/server/internal/agent"
+	"github.com/ldphuong-vn/valtag/server/internal/audit"
+	"github.com/ldphuong-vn/valtag/server/internal/dynsecret"
+	"github.com/ldphuong-vn/valtag/server/internal/vault"
+	"github.com/ldphuong-vn/valtag/server/pkg/crypto"
 )
 
 // Server is the HTTP forward proxy that intercepts agent requests
@@ -81,7 +81,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // This is the main credential injection path.
 func (s *Server) handleHTTP(w http.ResponseWriter, r *http.Request) {
 	// 1. Authenticate: agent token (Proxy-Authorization) and/or a derived
-	// API key (Authorization, valt_dk_ prefix). A valid derived key on its
+	// API key (Authorization, valtag_dk_ prefix). A valid derived key on its
 	// own also authenticates — the lease carries the entitlement.
 	agentID, lease, authErr := s.authenticateRequest(r)
 	if authErr != nil {
@@ -258,7 +258,7 @@ func (s *Server) handleConnect(w http.ResponseWriter, r *http.Request) {
 }
 
 // authenticateRequest authenticates a proxied request and returns the agent
-// identity plus, when the request presented a Valt-derived API key, its lease.
+// identity plus, when the request presented a valtag-derived API key, its lease.
 //
 // Accepted credentials (in order):
 //  1. Agent token in Proxy-Authorization, optionally combined with a derived

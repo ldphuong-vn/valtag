@@ -33,7 +33,7 @@ mod tests {
         let key = Aes256Gcm::generate_key(OsRng);
         let cipher = Aes256Gcm::new(&key);
         let nonce = Aes256Gcm::generate_nonce(OsRng);
-        let plaintext = b"hello valt";
+        let plaintext = b"hello valtag";
         let ciphertext = cipher.encrypt(&nonce, plaintext.as_ref()).unwrap();
         let mut combined = nonce.to_vec();
         combined.extend_from_slice(&ciphertext);

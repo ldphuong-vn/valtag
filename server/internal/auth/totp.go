@@ -8,7 +8,7 @@ import (
 
 	"github.com/pquerna/otp/totp"
 
-	"github.com/valt-dev/valt/server/pkg/apierror"
+	"github.com/ldphuong-vn/valtag/server/pkg/apierror"
 )
 
 // TOTPHandler manages TOTP 2FA endpoints.
@@ -43,7 +43,7 @@ func (h *TOTPHandler) Setup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	key, err := totp.Generate(totp.GenerateOpts{
-		Issuer:      "Valt",
+		Issuer:      "valtag",
 		AccountName: email,
 	})
 	if err != nil {

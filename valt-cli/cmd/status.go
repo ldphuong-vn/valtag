@@ -47,7 +47,7 @@ func runStatus(cmd *cobra.Command, args []string) error {
 
 	switch req.Status {
 	case "approved":
-		fmt.Printf("\n✓ Approved. Retrieve:  valt get %s\n", req.SecretName)
+		fmt.Printf("\n✓ Approved. Retrieve:  valtag get %s\n", req.SecretName)
 	case "pending":
 		fmt.Println("\n⏳ Pending approval. Approver notified via email/Slack.")
 	case "rejected":

@@ -1,6 +1,6 @@
 use chrono::Utc;
 use serde_json::{json, Value};
-use crate::client::ValtClient;
+use crate::client::ValtagClient;
 use crate::error::{Result, ValtError};
 use crate::protocol::ResourceDef;
 
@@ -27,7 +27,7 @@ pub fn list_resources() -> Vec<ResourceDef> {
     ]
 }
 
-pub async fn read_resource(uri: &str, client: &ValtClient) -> Result<Value> {
+pub async fn read_resource(uri: &str, client: &ValtagClient) -> Result<Value> {
     if uri == "vault://secrets" {
         let data = client.list_secrets().await?;
         return Ok(json!({ "contents": [{ "uri": uri, "mimeType": "application/json", "text": data.to_string() }] }));
@@ -69,7 +69,7 @@ mod tests {
     #[tokio::test]
     async fn test_unknown_uri_errors() {
         let config = crate::config::ValtConfig::default();
-        if let Ok(client) = crate::client::ValtClient::new(config.api_url, "tok".into()) {
+        if let Ok(client) = crate::client::ValtagClient::new(config.api_url, "tok".into()) {
             let err = read_resource("vault://unknown", &client).await;
             assert!(err.is_err());
         }
