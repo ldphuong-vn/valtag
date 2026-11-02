@@ -55,7 +55,7 @@ Single binary, chi router. Entry point: `server/cmd/server/main.go`.
 
 Internal packages (one domain per package):
 - `auth` — JWT RS256, Argon2id password hashing, Google OAuth, middleware
-- `vault` — secret CRUD; metadata in Postgres, encrypted blobs in MinIO
+- `vault` — secret CRUD; metadata and encrypted blobs in Postgres (secret_blobs)
 - `workflow` — access request state machine, approval chain, credential issuance
 - `dynsecret` — dynamic secret providers (Postgres DB credentials); AES-256-GCM encrypted at rest
 - `scanner` — secret scanning results
@@ -68,10 +68,10 @@ Internal packages (one domain per package):
 Shared packages under `server/pkg/`:
 - `crypto` — `EncryptAES256GCM` / `DecryptAES256GCM` (`[12-byte nonce || ciphertext+tag]`)
 
-Config is loaded from env vars via `envconfig` in `server/internal/config/config.go`. Required: `DATABASE_URL`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`. Set `VAULT_MASTER_KEY` (base64 32-byte); without it an ephemeral key is used (secrets lost on restart).
+Config is loaded from env vars via `envconfig` in `server/internal/config/config.go`. Required: `DATABASE_URL`. Set `VAULT_MASTER_KEY` (base64 32-byte); without it an ephemeral key is used (secrets lost on restart).
 
 ### Encryption model
-- **Secret values**: zero-knowledge, client-side. Client generates a DEK, encrypts with it, sends `encrypted_blob` + `encrypted_dek` (DEK wrapped by master key). Server stores blob in MinIO, DEK in Postgres.
+- **Secret values**: zero-knowledge, client-side. Client generates a DEK, encrypts with it, sends `encrypted_blob` + `encrypted_dek` (DEK wrapped by master key). Server stores blob and DEK in Postgres.
 - **DynSecret provider config & lease credentials**: server-side AES-256-GCM using `masterKey` from config.
 - **Master key** (`VAULT_MASTER_KEY`): base64-encoded 32-byte key; wraps DEKs for secret values and directly encrypts dynsecret data.
 
@@ -107,7 +107,6 @@ Sequential numbered SQL files in `server/internal/database/migrations/`. Current
 | Variable | Required | Notes |
 |----------|----------|-------|
 | `DATABASE_URL` | Yes | Postgres connection string |
-| `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY` | Yes | MinIO credentials |
 | `VAULT_MASTER_KEY` | Strongly recommended | Base64 32-byte AES key; ephemeral if unset |
 | `JWT_PRIVATE_KEY_PATH` / `JWT_PUBLIC_KEY_PATH` | Yes | RS256 PEM files |
 | `REDIS_URL` | No | Enables agent rate limiting (60 rpm) |

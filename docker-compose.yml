@@ -1,5 +1,6 @@
 services:
-  # PostgreSQL database
+  # PostgreSQL database — also stores the encrypted secret blobs
+  # (secret_blobs table); no separate object store needed.
   postgres:
     image: postgres:16-alpine
     environment:
@@ -16,24 +17,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # MinIO object storage
-  minio:
-    image: minio/minio:RELEASE.2024-12-18T13-15-44Z
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    volumes:
-      - minio-data:/data
-    healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
   # Go backend server
   server:
     build:
@@ -42,11 +25,6 @@ services:
     environment:
       PORT: "8080"
       DATABASE_URL: postgres://${POSTGRES_USER:-valt}:${POSTGRES_PASSWORD:-valt_dev_password}@postgres:5432/${POSTGRES_DB:-valt}?sslmode=disable
-      MINIO_ENDPOINT: minio:9000
-      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
-      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
-      MINIO_USE_SSL: "false"
-      MINIO_BUCKET: ${MINIO_BUCKET:-valt-secrets}
       CORS_ORIGINS: http://localhost:3000,http://localhost:8443
       JWT_PRIVATE_KEY_PATH: /app/keys/private.pem
       JWT_PUBLIC_KEY_PATH: /app/keys/public.pem
@@ -61,8 +39,6 @@ services:
       - "8080:8080"
     depends_on:
       postgres:
-        condition: service_healthy
-      minio:
         condition: service_healthy
 
   # Next.js dashboard
@@ -93,6 +69,5 @@ services:
 
 volumes:
   pgdata:
-  minio-data:
   caddy-data:
   caddy-config:

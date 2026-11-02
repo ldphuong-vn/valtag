@@ -18,6 +18,10 @@ import (
 	"github.com/valt-dev/valt/server/pkg/validator"
 )
 
+// maxEncryptedBlobSize caps secret ciphertext at 1 MiB — blobs land in the
+// secret_blobs Postgres table, and an unbounded upload could bloat the DB.
+const maxEncryptedBlobSize = 1 << 20
+
 var validCredentialTypes = map[string]bool{
 	"api_key":          true,
 	"db_credential":    true,
@@ -138,6 +142,13 @@ func (h *Handler) CreateSecret(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		apierror.BadRequest(w, "value or encrypted_blob is required")
+		return
+	}
+
+	// Blob-size cap: blobs land in the secret_blobs Postgres table; without
+	// a ceiling a single oversized request could bloat the shared DB.
+	if len(blob) > maxEncryptedBlobSize {
+		apierror.BadRequest(w, "secret too large (ciphertext exceeds 1 MiB)")
 		return
 	}
 
@@ -307,6 +318,11 @@ func (h *Handler) UpdateSecret(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
+	}
+
+	if len(blob) > maxEncryptedBlobSize {
+		apierror.BadRequest(w, "secret too large (ciphertext exceeds 1 MiB)")
+		return
 	}
 
 	secret, err := h.service.UpdateSecret(r.Context(), userID, secretID, UpdateSecretInput{

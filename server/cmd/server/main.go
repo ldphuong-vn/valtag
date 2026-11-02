@@ -75,14 +75,9 @@ func main() {
 		log.Fatalf("Failed to init JWT manager: %v", err)
 	}
 
-	// Init MinIO storage
-	storage, err := vault.NewMinIOStorage(
-		cfg.MinioEndpoint, cfg.MinioAccessKey, cfg.MinioSecretKey,
-		cfg.MinioBucket, cfg.MinioUseSSL,
-	)
-	if err != nil {
-		log.Fatalf("Failed to init MinIO storage: %v", err)
-	}
+	// Blob storage lives in Postgres itself (secret_blobs): encrypted blobs
+	// are opaque KV bytes; MinIO (repo archived 2026-04-25) is gone.
+	storage := vault.NewPostgresStorage(pool)
 
 	// Decode master key for envelope encryption
 	masterKey, err := cfg.MasterKey()

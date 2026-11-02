@@ -20,13 +20,6 @@ type Config struct {
 	// Database
 	DatabaseURL string `envconfig:"DATABASE_URL" required:"true"`
 
-	// MinIO
-	MinioEndpoint  string `envconfig:"MINIO_ENDPOINT" default:"localhost:9000"`
-	MinioAccessKey string `envconfig:"MINIO_ACCESS_KEY" required:"true"`
-	MinioSecretKey string `envconfig:"MINIO_SECRET_KEY" required:"true"`
-	MinioUseSSL    bool   `envconfig:"MINIO_USE_SSL" default:"false"`
-	MinioBucket    string `envconfig:"MINIO_BUCKET" default:"valt-secrets"`
-
 	// JWT
 	JWTPrivateKeyPath string `envconfig:"JWT_PRIVATE_KEY_PATH" default:"./keys/private.pem"`
 	JWTPublicKeyPath  string `envconfig:"JWT_PUBLIC_KEY_PATH" default:"./keys/public.pem"`

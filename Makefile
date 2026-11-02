@@ -61,5 +61,3 @@ restart: ## Restart all services
 db-shell: ## Open psql shell
 	docker compose exec postgres psql -U $${POSTGRES_USER:-valt} -d $${POSTGRES_DB:-valt}
 
-minio-console: ## Open MinIO console URL
-	@echo "MinIO Console: http://localhost:9001"

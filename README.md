@@ -31,7 +31,7 @@ Agent ──"I need this key for 30 min"──▶ Valt ──▶ Human approves 
 | Works with your existing agents | Yes but unsafe | Requires adopting their platform | Yes | Yes — any MCP client, CLI, or script |
 | Dynamic credentials | No | Not published | Not published | Mints throwaway creds per approval: temp Postgres roles (`VALID UNTIL`), derived API keys (`valt_dk_…`) |
 | Audit | Who read the secret, maybe | Vendor log | Vendor log | Who asked, why, where from (IP + UA), who approved — SHA-256 hash chain you can verify, with off-site anchoring |
-| Self-host | Varies | Varies (core Apache-2.0, `ee/` gated) | Commercial | Pure Apache-2.0, one Go binary + Postgres + MinIO |
+| Self-host | Varies | Varies (core Apache-2.0, `ee/` gated) | Commercial | Pure Apache-2.0, one Go binary + Postgres |
 
 For **dynamic backends** Valt goes further: it mints credentials that never existed before the approval — a temporary Postgres role, or a derived API key HMAC'd from your master key, which no upstream API accepts and only Valt's gateway understands. Your real key never leaves the vault.
 
@@ -116,7 +116,7 @@ On the roadmap toward v1.0: hardening sweep before the first tagged release (aut
 
 ## Security model, honestly
 
-- Secrets are encrypted at rest (AES-256-GCM envelope encryption; blobs in MinIO, DEKs wrapped with the master key). **The server does decrypt** approved secrets to deliver them — Valt is not zero-knowledge; it is *least-knowledge*: the standing state is always ciphertext, plaintext exists only at approved delivery time.
+- Secrets are encrypted at rest (AES-256-GCM envelope encryption; blobs in Postgres, DEKs wrapped with the master key). **The server does decrypt** approved secrets to deliver them — Valt is not zero-knowledge; it is *least-knowledge*: the standing state is always ciphertext, plaintext exists only at approved delivery time.
 - Credentials issued to agents are **leases with TTLs**; for derived keys the master key never leaves the server and the issued key is useless to anything but Valt's gateway.
 - The audit log is a **hash chain** — editing any row (IP, metadata, timestamps) breaks verification. Verify against an off-site anchor hash to also detect tail truncation.
 - Agent tokens live in the OS keychain, not in agent configs. On headless Linux, fall back to environment variables in a protected service unit.
