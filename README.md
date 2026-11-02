@@ -1,40 +1,44 @@
-# Valt — the MCP credential gate for AI agents
+# Valt — the ask-first credential gate for AI agents
 
 [![CI/CD](https://github.com/ldphuong-vn/vaultsaas/actions/workflows/ci.yml/badge.svg)](https://github.com/ldphuong-vn/vaultsaas/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 Your AI agent needs an API key. Today you paste a long-lived production key into its config — and it stays there, forever, on every machine the agent runs on, with no record of what the agent did with it.
 
-**Valt flips that.** It is a self-hosted gate that sits between your AI agents and your credentials: agents *request* access, a human *approves*, the agent receives a **short-lived lease** that auto-expires, and every step lands in a **tamper-evident audit trail**. Like issuing a laptop to an employee — except for AI credentials.
+**Valt flips that.** It is a self-hosted gate that sits between the agents you *already have* and your credentials: agents *request* access, a human *approves*, the agent receives a **short-lived lease** that auto-expires, and every step lands in a **tamper-evident audit trail**. Like issuing a laptop to an employee — except for AI credentials.
 
 ```
 Agent ──"I need this key for 30 min"──▶ Valt ──▶ Human approves (dashboard / Slack / email)
   ▲                                       │
-  └────── short-lived credential ◀────────┘
+  └────── short-lived lease ◀─────────────┘
               every request audited, revocable in one command
 ```
+
+**No new harness required.** Valt is not an agent platform — you don't move your agents into a sandbox or a runner. Keep Claude Code, Cursor, ZCode, your CI scripts and cron jobs exactly where they are. Attach one MCP server + one URL, and every credential they touch goes through the gate.
 
 ## Who is it for
 
 - **Solo founders** shipping AI features: give your agents real credentials without leaving production keys scattered in config files and `.env` copies.
-- **IT / platform teams**: onboarding an employee to AI tooling becomes provisioning — an agent identity, a policy, short leases. Offboarding is one command that kills every credential they (and their agents) hold.
+- **IT / platform teams**: onboarding an employee to AI tooling becomes provisioning — an agent identity, a policy, short leases. Offboarding is one command that kills every lease and agent token they hold.
 - **Dev teams** building agent features: your agents talk to Valt through standard MCP tools (`request_access` → `get_credential`) instead of you building secret handling into each agent.
 
-## Why Valt (and not just a secrets manager)
+## Why Valt (and not the alternatives)
 
-| | Static secret store | Valt |
-|---|---|---|
-| What the agent holds | The real, long-lived key | A lease that expires in minutes-to-hours |
-| Getting access | Whoever has read access to the store | Per-request approval, policy-gated (reason, duration, cooldown, daily limits) |
-| Revoking one person | Hunt for every copy | `POST /users/{id}/revoke-all` — leases, sessions, agent tokens die together |
-| Audit | Who read the secret, maybe | Who asked, why, where from (IP + user agent), who approved, with a hash chain you can verify |
+| | Static secret store | Agent platforms (harness + gateway) | Silent brokering (proxy attaches creds) | Valt |
+|---|---|---|---|---|
+| What the agent holds | The real, long-lived key | — (agent lives in their sandbox) | Nothing, by design | A lease that expires in minutes-to-hours |
+| Human in the loop | No | Approval *inside their harness* | No (or one-step consent) | Per-request approval, policy-gated (reason, duration, cooldown, daily limits) — as a standalone service |
+| Works with your existing agents | Yes but unsafe | Requires adopting their platform | Yes | Yes — any MCP client, CLI, or script |
+| Dynamic credentials | No | Not published | Not published | Mints throwaway creds per approval: temp Postgres roles (`VALID UNTIL`), derived API keys (`valt_dk_…`) |
+| Audit | Who read the secret, maybe | Vendor log | Vendor log | Who asked, why, where from (IP + UA), who approved — SHA-256 hash chain you can verify, with off-site anchoring |
+| Self-host | Varies | Varies (core Apache-2.0, `ee/` gated) | Commercial | Pure Apache-2.0, one Go binary + Postgres + MinIO |
 
-For **dynamic backends** Valt goes further: it mints throwaway credentials that never existed before the request — a temporary Postgres role (`CREATE ROLE ... VALID UNTIL`), or a derived API key (`valt_dk_…`) HMAC'd from your master key, which no upstream API accepts and only Valt understands — your real key never leaves the vault.
+For **dynamic backends** Valt goes further: it mints credentials that never existed before the approval — a temporary Postgres role, or a derived API key HMAC'd from your master key, which no upstream API accepts and only Valt's gateway understands. Your real key never leaves the vault.
 
 ## How it works
 
 ```
-                        ┌── dashboard / Slack / email / Telegram ──▶ Human (approves)
+                        ┌── dashboard / Slack / email ──▶ Human (approves)
                         │
 ZCode · Claude Code ·   │ 1. request_access(secret, reason, ttl)
 Cursor ──MCP/stdio──▶ valt-mcp-server ──HTTPS──▶ Valt server
@@ -100,15 +104,15 @@ valt run -- ./report.sh        # approved secrets injected as env vars
 
 ### Feature status
 
-Shipped and tested (integration tests run against real Postgres):
+Shipped (integration tests run against a real Postgres when `DATABASE_URL` is provided; otherwise they skip):
 
 - **Dynamic leases** — Postgres temporary roles (auto-expiring, swept clean after expiry) and derived API keys (HMAC-based, validated by hash, swapped for the master key at the gateway)
-- **Approval workflow** — dashboard, Slack, email action links, Telegram; policy engine per secret (max duration, reason required, cooldowns, daily limits, auto-approve tiers)
+- **Approval workflow** — dashboard, Slack (HMAC-verified interactions), email action links; policy engine per secret (max duration, reason required, cooldowns, daily limits, auto-approve tiers)
 - **Revoke cascade** — one command kills all leases + credential sessions + agent tokens of a user; org member removal cascades project access
 - **Audit 4W1H** — every event with IP/user-agent context, SHA-256 hash chain (covers all fields, survives restarts, concurrency-safe), `GET /audit/verify` with `?expected_head=` off-site anchoring, CSV export with formula-injection guard
-- **Secret scanning** — local scans for leaked credentials, exposed through MCP
+- **Secret scanning** — local regex scans for leaked credentials via the MCP `scan_secrets` tool, findings persisted server-side
 
-On the roadmap toward v1.0: cloud STS lease providers (start with Alibaba Cloud), SSH certificate issuance, Slack interactive approvals refinement, signed multi-platform releases (CLI pipeline ships 3 platforms; MCP server pipeline ships 6 targets).
+On the roadmap toward v1.0: hardening sweep before the first tagged release (authz audit, key rotation, prod TLS topology — see `docs/positioning.md`), cloud STS lease providers, SSH certificate issuance, signed multi-platform releases (CLI pipeline ships 3 platforms; MCP server pipeline ships 6 targets).
 
 ## Security model, honestly
 
@@ -118,10 +122,13 @@ On the roadmap toward v1.0: cloud STS lease providers (start with Alibaba Cloud)
 - Agent tokens live in the OS keychain, not in agent configs. On headless Linux, fall back to environment variables in a protected service unit.
 - Self-hosted only. Your approval flow, your keys, your audit data — nothing leaves your infrastructure. Pure Apache-2.0, no `ee/` directory, no feature gates, no CLA.
 
-See [docs/security-model.md](docs/security-model.md) for details and [SECURITY.md](SECURITY.md) for reporting vulnerabilities.
+> **Status: v0.x, pre-release.** Solo-maintained, moving fast. If you deploy it, read [SECURITY.md](SECURITY.md) first, change every default credential, and keep audit-chain heads anchored off-site. See [docs/positioning.md](docs/positioning.md) for the product thesis and known gaps.
+
+See [docs/security-model.md](docs/security-model.md) for details.
 
 ## Documentation
 
+- [Positioning & product thesis](docs/positioning.md) — USP, competitive map, what we will/won't build
 - [Security model](docs/security-model.md) — encryption, auth, audit chain
 - [System architecture](docs/system-architecture.md)
 - [Deployment guide](docs/deployment-guide.md) — dev + single-VPS production
@@ -137,8 +144,6 @@ make test    # all tests
 make lint    # linters
 make build   # build services
 ```
-
-Status: **v0.x, hardening toward v1.0.** APIs may still change — pin versions and read the changelog in `docs/`.
 
 ## License
 
