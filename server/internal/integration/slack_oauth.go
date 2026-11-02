@@ -13,13 +13,17 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+
 	"github.com/valt-dev/valt/server/internal/auth"
+	"github.com/valt-dev/valt/server/internal/rbac"
 	"github.com/valt-dev/valt/server/pkg/apierror"
 )
 
 // SlackOAuthHandler manages Slack OAuth v2 install flow.
 type SlackOAuthHandler struct {
 	store        *Store
+	pool         *pgxpool.Pool
 	clientID     string
 	clientSecret string
 	redirectURI  string
@@ -28,18 +32,24 @@ type SlackOAuthHandler struct {
 }
 
 // NewSlackOAuthHandler creates a Slack OAuth handler.
-func NewSlackOAuthHandler(store *Store, clientID, clientSecret, redirectURI, dashboardURL string, masterKey []byte) *SlackOAuthHandler {
+func NewSlackOAuthHandler(store *Store, pool *pgxpool.Pool, clientID, clientSecret, redirectURI, dashboardURL string, masterKey []byte) *SlackOAuthHandler {
 	return &SlackOAuthHandler{
-		store: store, clientID: clientID, clientSecret: clientSecret,
+		store: store, pool: pool, clientID: clientID, clientSecret: clientSecret,
 		redirectURI: redirectURI, dashboardURL: dashboardURL, masterKey: masterKey,
 	}
 }
 
 // Authorize redirects to Slack OAuth authorize URL. GET /oauth/slack?org_id=X
+// Org admin only: the OAuth result is bound to the org from the state, so
+// allowing arbitrary callers would let anyone attach their own Slack bot to
+// an org and receive its approval notifications.
 func (h *SlackOAuthHandler) Authorize(w http.ResponseWriter, r *http.Request) {
 	orgID := r.URL.Query().Get("org_id")
 	if orgID == "" {
 		apierror.BadRequest(w, "org_id required")
+		return
+	}
+	if !requireOrgRole(w, r, h.pool, orgID, rbac.OrgAdmin) {
 		return
 	}
 
@@ -177,11 +187,32 @@ func (h *SlackOAuthHandler) validateState(state string) (string, error) {
 // IntegrationHandler serves integration list/delete endpoints.
 type IntegrationHandler struct {
 	store *Store
+	pool  *pgxpool.Pool
 }
 
 // NewIntegrationHandler creates an IntegrationHandler.
-func NewIntegrationHandler(store *Store) *IntegrationHandler {
-	return &IntegrationHandler{store: store}
+func NewIntegrationHandler(store *Store, pool *pgxpool.Pool) *IntegrationHandler {
+	return &IntegrationHandler{store: store, pool: pool}
+}
+
+// requireOrgRole is the shared in-handler membership gate for endpoints that
+// take org_id as a query parameter. Returns false after writing the error.
+func requireOrgRole(w http.ResponseWriter, r *http.Request, pool *pgxpool.Pool, orgID, minRole string) bool {
+	callerID := auth.UserIDFromContext(r.Context())
+	if callerID == "" {
+		apierror.Unauthorized(w, "authentication required")
+		return false
+	}
+	role, err := rbac.UserOrgRole(r.Context(), pool, orgID, callerID)
+	if err != nil {
+		apierror.InternalError(w, "failed to check org membership")
+		return false
+	}
+	if !rbac.OrgRoleAtLeast(role, minRole) {
+		apierror.Forbidden(w, "insufficient org permissions")
+		return false
+	}
+	return true
 }
 
 // List returns connected integrations for an org. GET /integrations?org_id=X
@@ -189,6 +220,9 @@ func (ih *IntegrationHandler) List(w http.ResponseWriter, r *http.Request) {
 	orgID := r.URL.Query().Get("org_id")
 	if orgID == "" {
 		apierror.BadRequest(w, "org_id required")
+		return
+	}
+	if !requireOrgRole(w, r, ih.pool, orgID, rbac.OrgViewer) {
 		return
 	}
 	integrations, err := ih.store.ListByOrg(r.Context(), orgID)
@@ -202,10 +236,12 @@ func (ih *IntegrationHandler) List(w http.ResponseWriter, r *http.Request) {
 
 // DeleteSlack disconnects Slack for an org. DELETE /integrations/slack?org_id=X
 func (ih *IntegrationHandler) DeleteSlack(w http.ResponseWriter, r *http.Request) {
-	userID := auth.UserIDFromContext(r.Context())
 	orgID := r.URL.Query().Get("org_id")
-	if orgID == "" || userID == "" {
+	if orgID == "" {
 		apierror.BadRequest(w, "org_id required")
+		return
+	}
+	if !requireOrgRole(w, r, ih.pool, orgID, rbac.OrgAdmin) {
 		return
 	}
 	if err := ih.store.Delete(r.Context(), orgID, "slack"); err != nil {

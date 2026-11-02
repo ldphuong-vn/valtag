@@ -8,8 +8,10 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/valt-dev/valt/server/internal/auth"
+	"github.com/valt-dev/valt/server/internal/rbac"
 	"github.com/valt-dev/valt/server/pkg/apierror"
 )
 
@@ -20,12 +22,13 @@ type EmailSender interface {
 
 type Handler struct {
 	service      *Service
+	pool         *pgxpool.Pool
 	emailSender  EmailSender
 	dashboardURL string
 }
 
-func NewHandler(service *Service) *Handler {
-	return &Handler{service: service}
+func NewHandler(service *Service, pool *pgxpool.Pool) *Handler {
+	return &Handler{service: service, pool: pool}
 }
 
 // SetEmailSender configures the email sender for invitation emails.
@@ -36,16 +39,31 @@ func (h *Handler) SetEmailSender(s EmailSender, dashboardURL string) {
 
 func (h *Handler) Routes() chi.Router {
 	r := chi.NewRouter()
+	// Creating an org and listing one's own orgs are user-scoped — no org check.
 	r.Post("/", h.createOrg)
 	r.Get("/", h.listOrgs)
-	r.Get("/{org_id}", h.getOrg)
-	r.Put("/{org_id}", h.updateOrg)
-	r.Post("/{org_id}/members", h.addMember)
-	r.Get("/{org_id}/members", h.listMembers)
-	r.Delete("/{org_id}/members/{user_id}", h.removeMember)
-	r.Post("/{org_id}/invitations", h.createInvitation)
-	r.Get("/{org_id}/invitations", h.listInvitations)
-	r.Delete("/{org_id}/invitations/{invitation_id}", h.cancelInvitation)
+
+	// Everything below the {org_id} prefix requires org membership;
+	// mutations require org admin (invitation management included —
+	// they mint org access and send emails).
+	r.Route("/{org_id}", func(r chi.Router) {
+		r.Use(rbac.RequireOrgMembership(h.pool, "org_id", rbac.OrgViewer))
+		r.Get("/", h.getOrg)
+		r.Get("/members", h.listMembers)
+
+		r.Group(func(r chi.Router) {
+			r.Use(rbac.RequireOrgMembership(h.pool, "org_id", rbac.OrgAdmin))
+			r.Put("/", h.updateOrg)
+			r.Post("/members", h.addMember)
+			r.Post("/invitations", h.createInvitation)
+			r.Get("/invitations", h.listInvitations)
+			r.Delete("/invitations/{invitation_id}", h.cancelInvitation)
+		})
+
+		// removeMember carries its own admin check with specific error
+		// semantics (owner cannot be removed) — kept in-handler.
+		r.Delete("/members/{user_id}", h.removeMember)
+	})
 	return r
 }
 

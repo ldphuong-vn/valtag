@@ -14,6 +14,7 @@ import (
 
 	"github.com/valt-dev/valt/server/internal/admin"
 	"github.com/valt-dev/valt/server/internal/auth"
+	"github.com/valt-dev/valt/server/internal/rbac"
 	"github.com/valt-dev/valt/server/pkg/apierror"
 	"github.com/valt-dev/valt/server/pkg/validator"
 )
@@ -165,7 +166,20 @@ type auditLogResponse struct {
 }
 
 func (h *Handler) queryLogs(w http.ResponseWriter, r *http.Request) {
-	_ = auth.UserIDFromContext(r.Context())
+	callerID := auth.UserIDFromContext(r.Context())
+	if callerID == "" {
+		apierror.Unauthorized(w, "authentication required")
+		return
+	}
+	// Org admins/owners keep the org-wide trail view a self-hosted deployment
+	// expects; everyone else sees only their own entries (audit rows carry no
+	// org_id yet — org scoping is tracked for Phase 1).
+	maxRole, err := rbac.UserMaxOrgRole(r.Context(), h.pool, callerID)
+	if err != nil {
+		apierror.InternalError(w, "failed to check audit visibility")
+		return
+	}
+	scopeToCaller := !rbac.OrgRoleAtLeast(maxRole, rbac.OrgAdmin)
 
 	pg, err := validator.ValidatePagination(
 		r.URL.Query().Get("page"),
@@ -186,6 +200,13 @@ func (h *Handler) queryLogs(w http.ResponseWriter, r *http.Request) {
 	countQuery := `SELECT COUNT(*) FROM audit_logs WHERE 1=1`
 	args := []interface{}{}
 	argIdx := 1
+
+	if scopeToCaller {
+		query += " AND user_id = $1"
+		countQuery += " AND user_id = $1"
+		args = append(args, callerID)
+		argIdx++
+	}
 
 	if eventType != "" {
 		query += fmt.Sprintf(" AND event_type = $%d", argIdx)

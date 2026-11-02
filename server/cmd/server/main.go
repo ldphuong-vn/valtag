@@ -154,7 +154,7 @@ func main() {
 	consentHandler := consent.NewHandler(consentSvc)
 
 	orgSvc := org.NewService(pool)
-	orgHandler := org.NewHandler(orgSvc)
+	orgHandler := org.NewHandler(orgSvc, pool)
 	if emailSender != nil {
 		orgHandler.SetEmailSender(emailSender, cfg.DashboardURL)
 	}
@@ -163,7 +163,7 @@ func main() {
 	projectSvc := project.NewService(pool)
 	projectHandler := project.NewHandler(projectSvc)
 	agentSvc := agent.NewService(pool)
-	agentHandler := agent.NewHandler(agentSvc)
+	agentHandler := agent.NewHandler(agentSvc, pool)
 	policySvc := policy.NewService(pool)
 	policyHandler := policy.NewHandler(policySvc)
 	scannerSvc := scanner.NewService(pool)
@@ -194,8 +194,8 @@ func main() {
 	var slackOAuthHandler *integration.SlackOAuthHandler
 	var integrationHandler *integration.IntegrationHandler
 	if cfg.SlackClientID != "" {
-		slackOAuthHandler = integration.NewSlackOAuthHandler(integrationStore, cfg.SlackClientID, cfg.SlackClientSecret, cfg.BaseURL+"/api/v1/oauth/slack/callback", cfg.DashboardURL, masterKey)
-		integrationHandler = integration.NewIntegrationHandler(integrationStore)
+		slackOAuthHandler = integration.NewSlackOAuthHandler(integrationStore, pool, cfg.SlackClientID, cfg.SlackClientSecret, cfg.BaseURL+"/api/v1/oauth/slack/callback", cfg.DashboardURL, masterKey)
+		integrationHandler = integration.NewIntegrationHandler(integrationStore, pool)
 	}
 
 	// Webhooks (outbound HMAC-signed)
@@ -366,17 +366,29 @@ func main() {
 				r.Delete("/integrations/slack", integrationHandler.DeleteSlack)
 			}
 			r.Mount("/orgs", orgHandler.Routes())
-			r.Post("/orgs/{org_id}/webhooks", webhookHandler.Create)
-			r.Get("/orgs/{org_id}/webhooks", webhookHandler.List)
-			r.Delete("/orgs/{org_id}/webhooks/{id}", webhookHandler.Delete)
-			r.Mount("/orgs/{org_id}/workspaces", workspaceHandler.Routes())
+			// Org webhook CRUD and workspaces are org-scoped resources —
+			// membership required (admin for webhooks: they receive approval
+			// callbacks, i.e. sensitive notifications).
+			r.Route("/orgs/{org_id}/webhooks", func(r chi.Router) {
+				r.Use(rbac.RequireOrgMembership(pool, "org_id", rbac.OrgAdmin))
+				r.Post("/", webhookHandler.Create)
+				r.Get("/", webhookHandler.List)
+				r.Delete("/{id}", webhookHandler.Delete)
+			})
+			r.Group(func(r chi.Router) {
+				r.Use(rbac.RequireOrgMembership(pool, "org_id", rbac.OrgMember))
+				r.Mount("/orgs/{org_id}/workspaces", workspaceHandler.Routes())
+			})
 			projectHandler.RegisterRoutes(r)
 			agentHandler.RegisterRoutes(r)
 			policyHandler.RegisterRoutes(r)
 			gatewayHandler.RegisterRoutes(r)
 			scannerHandler.RegisterRoutes(r)
 			dynHandler.RegisterRoutes(r)
-			usageHandler.RegisterRoutes(r)
+			r.Group(func(r chi.Router) {
+				r.Use(rbac.RequireOrgMembership(pool, "org_id", rbac.OrgViewer))
+				usageHandler.RegisterRoutes(r)
+			})
 
 			// Admin routes — restricted to users with role = 'admin'
 			r.Route("/admin", func(r chi.Router) {

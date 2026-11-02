@@ -7,19 +7,22 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/valt-dev/valt/server/internal/auth"
+	"github.com/valt-dev/valt/server/internal/rbac"
 	"github.com/valt-dev/valt/server/pkg/apierror"
 )
 
 // Handler exposes agent identity HTTP endpoints.
 type Handler struct {
 	service *Service
+	pool    *pgxpool.Pool
 }
 
 // NewHandler creates a new agent Handler.
-func NewHandler(service *Service) *Handler {
-	return &Handler{service: service}
+func NewHandler(service *Service, pool *pgxpool.Pool) *Handler {
+	return &Handler{service: service, pool: pool}
 }
 
 // Routes returns a chi.Router with all agent routes.
@@ -35,12 +38,22 @@ func (h *Handler) RegisterRoutes(r chi.Router) {
 }
 
 func (h *Handler) registerRoutes(r chi.Router) {
-	r.Post("/projects/{project_id}/agents", h.CreateAgent)
-	r.Get("/projects/{project_id}/agents", h.ListAgents)
-	r.Get("/agents/{agent_id}", h.GetAgent)
-	r.Post("/agents/{agent_id}/tokens", h.IssueToken)
-	r.Delete("/agents/{agent_id}/tokens/{token_id}", h.RevokeToken)
-	r.Get("/agents/{agent_id}/tokens", h.ListTokens)
+	// Project-scoped routes: project RBAC applies directly from the URL param.
+	r.With(rbac.Middleware(h.pool, "project_id", rbac.ResourceAgent, rbac.ActionWrite)).
+		Post("/projects/{project_id}/agents", h.CreateAgent)
+	r.With(rbac.Middleware(h.pool, "project_id", rbac.ResourceAgent, rbac.ActionRead)).
+		Get("/projects/{project_id}/agents", h.ListAgents)
+
+	// Agent-scoped routes: resolve the agent's owning project first; unknown
+	// agents 404 so callers cannot probe existence.
+	r.With(rbac.RequireAgentAccess(h.pool, "agent_id", rbac.ResourceAgent, rbac.ActionRead)).
+		Get("/agents/{agent_id}", h.GetAgent)
+	r.With(rbac.RequireAgentAccess(h.pool, "agent_id", rbac.ResourceAgent, rbac.ActionWrite)).
+		Post("/agents/{agent_id}/tokens", h.IssueToken)
+	r.With(rbac.RequireAgentAccess(h.pool, "agent_id", rbac.ResourceAgent, rbac.ActionWrite)).
+		Delete("/agents/{agent_id}/tokens/{token_id}", h.RevokeToken)
+	r.With(rbac.RequireAgentAccess(h.pool, "agent_id", rbac.ResourceAgent, rbac.ActionRead)).
+		Get("/agents/{agent_id}/tokens", h.ListTokens)
 }
 
 type createAgentRequest struct {

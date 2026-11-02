@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+
 	"github.com/valt-dev/valt/server/internal/auth"
 	"github.com/valt-dev/valt/server/pkg/apierror"
 )
@@ -27,19 +28,56 @@ func Middleware(db *pgxpool.Pool, projectParam string, resource Resource, action
 				return
 			}
 
-			// Look up user's role in this project
-			var role string
-			err := db.QueryRow(r.Context(),
-				`SELECT role FROM project_memberships WHERE project_id = $1 AND user_id = $2`,
-				projectID, userID,
-			).Scan(&role)
+			ok, err := userProjectAccess(r.Context(), db, userID, projectID, resource, action)
 			if err != nil {
-				// Not a member — deny
-				apierror.Forbidden(w, "access denied")
+				apierror.InternalError(w, "failed to check project access")
+				return
+			}
+			if !ok {
+				apierror.Forbidden(w, "insufficient permissions")
 				return
 			}
 
-			if !Can(RoleFromProjectMembership(role), resource, action) {
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+// RequireAgentAccess returns middleware that resolves the agent in the URL
+// param agentParam to its owning project and requires the caller to hold
+// resource/action on that project. Unknown agents yield 404 so callers cannot
+// probe agent existence.
+func RequireAgentAccess(db *pgxpool.Pool, agentParam string, resource Resource, action Action) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			userID := auth.UserIDFromContext(r.Context())
+			if userID == "" {
+				apierror.Unauthorized(w, "authentication required")
+				return
+			}
+
+			agentID := chi.URLParam(r, agentParam)
+			if agentID == "" {
+				apierror.BadRequest(w, agentParam+" is required")
+				return
+			}
+
+			projectID, err := AgentProject(r.Context(), db, agentID)
+			if err != nil {
+				apierror.InternalError(w, "failed to resolve agent")
+				return
+			}
+			if projectID == "" {
+				apierror.NotFound(w, "agent not found")
+				return
+			}
+
+			ok, err := userProjectAccess(r.Context(), db, userID, projectID, resource, action)
+			if err != nil {
+				apierror.InternalError(w, "failed to check project access")
+				return
+			}
+			if !ok {
 				apierror.Forbidden(w, "insufficient permissions")
 				return
 			}
