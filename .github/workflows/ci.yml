@@ -18,16 +18,19 @@ jobs:
       # Integration tests apply all embedded migrations per test schema and
       # self-skip when DATABASE_URL is unset — this service is what makes
       # them actually run instead of silently skipping (report §5).
+      # Single instance on 15432: the dynsecret sweeper test uses the SAME
+      # instance as the dynamic-role backend ("same instance, same pg_roles"
+      # per sweep_integration_test.go), so DATABASE_URL must point here.
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_USER: valt
-          POSTGRES_PASSWORD: valt_dev_password
-          POSTGRES_DB: valt
+          POSTGRES_USER: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: postgres
         ports:
-          - 5432:5432
+          - 15432:5432
         options: >-
-          --health-cmd "pg_isready -U valt"
+          --health-cmd "pg_isready -U postgres"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
@@ -47,7 +50,7 @@ jobs:
 
       - name: Go unit + integration tests
         env:
-          DATABASE_URL: postgres://valt:valt_dev_password@localhost:5432/valt?sslmode=disable
+          DATABASE_URL: postgres://postgres@localhost:15432/postgres?sslmode=disable
         run: cd server && go test ./internal/... ./pkg/... -count=1 -timeout 10m
 
   test-mcp:

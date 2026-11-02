@@ -47,21 +47,31 @@ func UserOrgRole(ctx context.Context, db *pgxpool.Pool, orgID, userID string) (s
 }
 
 // UserMaxOrgRole returns the strongest org role the user holds across all
-// orgs ("" when the user belongs to no org). Used for visibility policies
-// where audit rows are not org-scoped yet.
+// orgs ("" when the user belongs to no org). Ranking is numeric — MAX over
+// role names would compare text ('member' > 'admin'), so the query maps
+// roles to ranks first. Used for visibility policies where audit rows are
+// not org-scoped yet.
 func UserMaxOrgRole(ctx context.Context, db *pgxpool.Pool, userID string) (string, error) {
-	var role *string
+	var rank int
 	err := db.QueryRow(ctx,
-		`SELECT MAX(CASE role WHEN 'owner' THEN 'owner' WHEN 'admin' THEN 'admin' WHEN 'member' THEN 'member' WHEN 'viewer' THEN 'viewer' END) FROM org_memberships WHERE user_id = @user_id`,
+		`SELECT COALESCE(MAX(CASE role WHEN 'owner' THEN 4 WHEN 'admin' THEN 3 WHEN 'member' THEN 2 WHEN 'viewer' THEN 1 ELSE 0 END), 0) FROM org_memberships WHERE user_id = @user_id`,
 		pgx.NamedArgs{"user_id": userID},
-	).Scan(&role)
+	).Scan(&rank)
 	if err != nil {
 		return "", err
 	}
-	if role == nil {
+	switch rank {
+	case 4:
+		return OrgOwner, nil
+	case 3:
+		return OrgAdmin, nil
+	case 2:
+		return OrgMember, nil
+	case 1:
+		return OrgViewer, nil
+	default:
 		return "", nil
 	}
-	return *role, nil
 }
 
 // AgentProject returns the project that owns the agent identity ("" when the
