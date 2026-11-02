@@ -108,7 +108,20 @@ pub async fn run_http_server(port: u16, client: ValtClient) -> anyhow::Result<()
         .route("/mcp/sse", get(handle_mcp_sse))
         .with_state(state);
 
-    let addr = format!("0.0.0.0:{port}");
+    // No token configured: verify_token lets everything through, so bind to
+    // loopback only — never expose an unauthenticated MCP server to the
+    // network (report §4.14). With a token set, remote binding is fine.
+    let host = match crate::client::get_auth_token() {
+        Some(t) if !t.is_empty() => "0.0.0.0",
+        _ => {
+            tracing::warn!(
+                "No auth token configured (VALT_TOKEN): HTTP transport bound to 127.0.0.1 only. \
+                 Set VALT_TOKEN to require Bearer auth and allow remote clients."
+            );
+            "127.0.0.1"
+        }
+    };
+    let addr = format!("{host}:{port}");
     tracing::info!("Valt MCP HTTP server listening on {}", addr);
 
     let listener = tokio::net::TcpListener::bind(&addr).await?;

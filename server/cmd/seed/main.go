@@ -34,16 +34,24 @@ func main() {
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
 
-	// Users
+	// Users. Re-seeding must NEVER reset passwords (report §4.13): the seed
+	// defaults are public in this repo, so resetting would hand anyone the
+	// admin account. Existing users are left untouched.
 	adminHash := hashPassword("ValtAdmin2026!")
 	devHash := hashPassword("ValtDev2026!!")
 
 	var adminID, devID string
 	err = tx.QueryRow(ctx,
-		`INSERT INTO users (email, password_hash, region_code, status)
-		 VALUES ($1, $2, $3, $4)
-		 ON CONFLICT (email) DO UPDATE SET password_hash = $2
-		 RETURNING id`,
+		`WITH ins AS (
+			INSERT INTO users (email, password_hash, region_code, status)
+			VALUES ($1, $2, $3, $4)
+			ON CONFLICT (email) DO NOTHING
+			RETURNING id
+		)
+		SELECT id FROM ins
+		UNION ALL
+		SELECT id FROM users WHERE email = $1
+		LIMIT 1`,
 		"admin@valt.dev", adminHash, "us", "active",
 	).Scan(&adminID)
 	if err != nil {
@@ -51,15 +59,22 @@ func main() {
 	}
 
 	err = tx.QueryRow(ctx,
-		`INSERT INTO users (email, password_hash, region_code, status)
-		 VALUES ($1, $2, $3, $4)
-		 ON CONFLICT (email) DO UPDATE SET password_hash = $2
-		 RETURNING id`,
+		`WITH ins AS (
+			INSERT INTO users (email, password_hash, region_code, status)
+			VALUES ($1, $2, $3, $4)
+			ON CONFLICT (email) DO NOTHING
+			RETURNING id
+		)
+		SELECT id FROM ins
+		UNION ALL
+		SELECT id FROM users WHERE email = $1
+		LIMIT 1`,
 		"dev@valt.dev", devHash, "eu", "active",
 	).Scan(&devID)
 	if err != nil {
 		log.Fatalf("Failed to insert dev user: %v", err)
 	}
+	log.Printf("Seed users use well-known passwords — change admin@valt.dev / dev@valt.dev credentials before any real use")
 
 	// Secrets (3 per user)
 	secrets := []struct {
