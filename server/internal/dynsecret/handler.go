@@ -8,8 +8,10 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/ldphuong-vn/valtag/server/internal/agent"
 	"github.com/ldphuong-vn/valtag/server/internal/auth"
 	"github.com/ldphuong-vn/valtag/server/internal/rbac"
 	"github.com/ldphuong-vn/valtag/server/pkg/apierror"
@@ -38,12 +40,19 @@ func (h *Handler) RegisterRoutes(r chi.Router) {
 	h.registerRoutes(r)
 }
 
+// RegisterLeaseRoute registers POST /providers/{provider_id}/leases on the
+// dual-auth group (user JWT or agent token) — the MCP request_dynamic_secret
+// tool calls it with an agent token and got a 401 on the JWT-only group
+// (report §3.3 #4). CreateLease itself enforces the agent/user authz split.
+func (h *Handler) RegisterLeaseRoute(r chi.Router) {
+	r.Post("/providers/{provider_id}/leases", h.CreateLease)
+}
+
 func (h *Handler) registerRoutes(r chi.Router) {
 	r.With(rbac.Middleware(h.db, "project_id", rbac.ResourceDynSecret, rbac.ActionWrite)).
 		Post("/projects/{project_id}/providers", h.CreateProvider)
 	r.With(rbac.Middleware(h.db, "project_id", rbac.ResourceDynSecret, rbac.ActionRead)).
 		Get("/projects/{project_id}/providers", h.ListProviders)
-	r.Post("/providers/{provider_id}/leases", h.CreateLease)
 	r.Get("/providers/{provider_id}/leases", h.ListLeases)
 	r.Delete("/leases/{lease_id}", h.RevokeLease)
 }
@@ -119,7 +128,9 @@ func (h *Handler) ListProviders(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) CreateLease(w http.ResponseWriter, r *http.Request) {
 	providerID := chi.URLParam(r, "provider_id")
 	userID := auth.UserIDFromContext(r.Context())
-	if !h.checkProviderAccess(r.Context(), w, providerID, userID, rbac.ActionWrite) {
+	agentID := agent.AgentIDFromContext(r.Context())
+	if userID == "" && agentID == "" {
+		apierror.Unauthorized(w, "authentication required")
 		return
 	}
 
@@ -130,6 +141,20 @@ func (h *Handler) CreateLease(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.TTLSeconds <= 0 || req.TTLSeconds > 3600 {
 		apierror.BadRequest(w, "ttl_seconds must be between 1 and 3600")
+		return
+	}
+
+	if agentID != "" {
+		// Agent path (report §3.3 #4): agents mint leases for themselves on
+		// providers of their own project — never for another agent.
+		if req.AgentID != agentID {
+			apierror.Forbidden(w, "agents may only mint leases for themselves")
+			return
+		}
+		if !h.checkAgentProviderAccess(r.Context(), w, providerID, agentID) {
+			return
+		}
+	} else if !h.checkProviderAccess(r.Context(), w, providerID, userID, rbac.ActionWrite) {
 		return
 	}
 
@@ -208,4 +233,37 @@ func (h *Handler) checkProviderAccess(ctx context.Context, w http.ResponseWriter
 		return false
 	}
 	return true
+}
+
+// checkAgentProviderAccess grants an agent lease-minting rights only when
+// the provider belongs to the agent's own project.
+func (h *Handler) checkAgentProviderAccess(ctx context.Context, w http.ResponseWriter, providerID, agentID string) bool {
+	pc, err := h.service.GetProvider(ctx, providerID)
+	if err != nil {
+		apierror.NotFound(w, "provider not found")
+		return false
+	}
+	agentProject, err := agentGetProject(ctx, h.db, agentID)
+	if err != nil || agentProject == "" {
+		apierror.NotFound(w, "agent not found")
+		return false
+	}
+	if pc.ProjectID != agentProject {
+		apierror.Forbidden(w, "provider belongs to a different project")
+		return false
+	}
+	return true
+}
+
+// agentGetProject resolves the owning project of an agent identity.
+func agentGetProject(ctx context.Context, db *pgxpool.Pool, agentID string) (string, error) {
+	var projectID string
+	err := db.QueryRow(ctx, `SELECT project_id FROM agent_identities WHERE id = $1`, agentID).Scan(&projectID)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return "", nil
+		}
+		return "", err
+	}
+	return projectID, nil
 }

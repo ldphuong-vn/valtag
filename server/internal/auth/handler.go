@@ -171,9 +171,12 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var userID string
+	// Without SMTP there is no way to verify an address — auto-verify so
+	// self-hosters without email are never locked out (report §4.15).
+	autoVerified := h.emailSender == nil
 	err = h.pool.QueryRow(r.Context(),
-		`INSERT INTO users (email, password_hash, region_code) VALUES ($1, $2, $3) RETURNING id`,
-		req.Email, hash, req.RegionCode,
+		`INSERT INTO users (email, password_hash, region_code, email_verified) VALUES ($1, $2, $3, $4) RETURNING id`,
+		req.Email, hash, req.RegionCode, autoVerified,
 	).Scan(&userID)
 	if err != nil {
 		if isDuplicateKeyError(err) {
@@ -210,10 +213,11 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var userID, passwordHash, status string
+	var emailVerified bool
 	err := h.pool.QueryRow(r.Context(),
-		`SELECT id, password_hash, status FROM users WHERE email = $1`,
+		`SELECT id, password_hash, status, email_verified FROM users WHERE email = $1`,
 		req.Email,
-	).Scan(&userID, &passwordHash, &status)
+	).Scan(&userID, &passwordHash, &status, &emailVerified)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			h.loginLockout.RecordFailure(req.Email)
@@ -234,6 +238,15 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	if err != nil || !match {
 		h.loginLockout.RecordFailure(req.Email)
 		apierror.Unauthorized(w, "invalid email or password")
+		return
+	}
+
+	// Email verification is enforced only when SMTP is configured —
+	// self-hosters without email auto-verify at registration (report §4.15).
+	// Checked after the password match so the endpoint doesn't leak
+	// verification status to unauthenticated guessers.
+	if h.emailSender != nil && !emailVerified {
+		apierror.Forbidden(w, "email not verified — check your inbox, or resend via POST /api/v1/auth/resend-verification")
 		return
 	}
 

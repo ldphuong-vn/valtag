@@ -448,8 +448,10 @@ var privateIPNets = func() []*net.IPNet {
 	return nets
 }()
 
-// isPrivateHost resolves a hostname and returns true if any resolved IP is private.
-// Blocks SSRF attacks targeting internal services, cloud metadata (169.254.169.254), etc.
+// isPrivateHost resolves a hostname and returns true if any resolved IP is
+// private or if the host cannot be resolved (fail-closed — report §4.9: a
+// resolvable-on-dial hostname would otherwise bypass the blocklist, and a
+// broken resolver must not open a path to internal services).
 func isPrivateHost(host string) bool {
 	h := stripPort(host)
 	// Direct IP check
@@ -464,7 +466,7 @@ func isPrivateHost(host string) bool {
 	// DNS resolution check
 	addrs, err := net.LookupHost(h)
 	if err != nil {
-		return false // can't resolve — let the dial fail naturally
+		return true // can't resolve — fail closed
 	}
 	for _, addr := range addrs {
 		if ip := net.ParseIP(addr); ip != nil {

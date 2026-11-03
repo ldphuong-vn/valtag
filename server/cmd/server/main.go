@@ -295,6 +295,15 @@ func main() {
 			r.Get("/credentials/by-secret/{secret_id}", workflowHandler.GetCredentialBySecret)
 			r.Get("/credentials/{request_id}", workflowHandler.GetCredential)
 			r.Post("/credentials/{request_id}/revoke", workflowHandler.RevokeCredential)
+
+			// Dynamic lease minting: agents call this with their own token
+			// (MCP request_dynamic_secret got a 401 on the JWT-only group —
+			// report §3.3 #4). CreateLease enforces that agents mint only
+			// for themselves on their own project's providers.
+			dynHandler.RegisterLeaseRoute(r)
+
+			// Audit logs — agents read their own trail (MCP vault://audit)
+			r.Mount("/audit", auditHandler.Routes())
 		})
 
 		// JWT-only authenticated routes: for write operations and user-specific operations
@@ -347,8 +356,8 @@ func main() {
 			// credential granted to a user: leases, sessions, agent tokens.
 			r.Post("/users/{user_id}/revoke-all", revokeSvc.HandleRevokeAllForUser)
 
-			// Audit and user-specific operations
-			r.Mount("/audit", auditHandler.Routes())
+			// Consent and user-specific operations (audit now lives on the
+			// dual-auth group above so agents can read their own trail)
 			r.Mount("/consent", consentHandler.Routes())
 			// Billing (checkout + portal)
 			if billingHandler != nil {

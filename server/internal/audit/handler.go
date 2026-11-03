@@ -13,6 +13,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/ldphuong-vn/valtag/server/internal/admin"
+	"github.com/ldphuong-vn/valtag/server/internal/agent"
 	"github.com/ldphuong-vn/valtag/server/internal/auth"
 	"github.com/ldphuong-vn/valtag/server/internal/rbac"
 	"github.com/ldphuong-vn/valtag/server/pkg/apierror"
@@ -167,19 +168,32 @@ type auditLogResponse struct {
 
 func (h *Handler) queryLogs(w http.ResponseWriter, r *http.Request) {
 	callerID := auth.UserIDFromContext(r.Context())
-	if callerID == "" {
+	agentID := agent.AgentIDFromContext(r.Context())
+	if callerID == "" && agentID == "" {
 		apierror.Unauthorized(w, "authentication required")
 		return
 	}
-	// Org admins/owners keep the org-wide trail view a self-hosted deployment
-	// expects; everyone else sees only their own entries (audit rows carry no
+	// Scoping (report §4.4): agents see only their own trail (audit rows
+	// written for agent actions carry user_id = "agent:<id>"). Org
+	// admins/owners keep the org-wide trail view a self-hosted deployment
+	// expects; human users see only their own entries (audit rows carry no
 	// org_id yet — org scoping is tracked for Phase 1).
-	maxRole, err := rbac.UserMaxOrgRole(r.Context(), h.pool, callerID)
-	if err != nil {
-		apierror.InternalError(w, "failed to check audit visibility")
-		return
+	scopeToCaller := false
+	scopeValue := ""
+	if agentID != "" {
+		scopeToCaller = true
+		scopeValue = "agent:" + agentID
+	} else {
+		maxRole, err := rbac.UserMaxOrgRole(r.Context(), h.pool, callerID)
+		if err != nil {
+			apierror.InternalError(w, "failed to check audit visibility")
+			return
+		}
+		if !rbac.OrgRoleAtLeast(maxRole, rbac.OrgAdmin) {
+			scopeToCaller = true
+			scopeValue = callerID
+		}
 	}
-	scopeToCaller := !rbac.OrgRoleAtLeast(maxRole, rbac.OrgAdmin)
 
 	pg, err := validator.ValidatePagination(
 		r.URL.Query().Get("page"),
@@ -202,10 +216,24 @@ func (h *Handler) queryLogs(w http.ResponseWriter, r *http.Request) {
 	argIdx := 1
 
 	if scopeToCaller {
-		query += " AND user_id = $1"
-		countQuery += " AND user_id = $1"
-		args = append(args, callerID)
+		query += fmt.Sprintf(" AND user_id = $%d", argIdx)
+		countQuery += fmt.Sprintf(" AND user_id = $%d", argIdx)
+		args = append(args, scopeValue)
 		argIdx++
+	}
+
+	// MCP vault://audit/today sends ?date=YYYY-MM-DD — filter to that day
+	// (UTC) when present.
+	if dateStr := r.URL.Query().Get("date"); dateStr != "" {
+		day, parseErr := time.Parse("2006-01-02", dateStr)
+		if parseErr != nil {
+			apierror.BadRequest(w, "invalid date format, use YYYY-MM-DD")
+			return
+		}
+		query += fmt.Sprintf(" AND event_time >= $%d AND event_time < $%d", argIdx, argIdx+1)
+		countQuery += fmt.Sprintf(" AND event_time >= $%d AND event_time < $%d", argIdx, argIdx+1)
+		args = append(args, day, day.Add(24*time.Hour))
+		argIdx += 2
 	}
 
 	if eventType != "" {

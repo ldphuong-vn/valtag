@@ -104,6 +104,15 @@ func (h *Handler) googleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Google may return an unverified email (report §4.11) — linking or
+	// creating an account on it would let anyone claim someone else's
+	// address by controlling an unverified Google account.
+	if !info.VerifiedEmail {
+		log.Printf("oauth: rejected unverified Google email %q", info.Email)
+		http.Error(w, "Google account email is not verified", http.StatusForbidden)
+		return
+	}
+
 	userID, isNew, err := h.upsertGoogleUser(r, info)
 	if err != nil {
 		log.Printf("oauth: upsert user: %v", err)
@@ -187,8 +196,8 @@ func (h *Handler) upsertGoogleUser(r *http.Request, info googleUserInfo) (string
 
 	// Create new user
 	err = h.pool.QueryRow(r.Context(),
-		`INSERT INTO users (email, google_id, display_name, avatar_url, auth_provider, region_code)
-		 VALUES ($1, $2, $3, $4, 'google', 'us')
+		`INSERT INTO users (email, google_id, display_name, avatar_url, auth_provider, region_code, email_verified)
+		 VALUES ($1, $2, $3, $4, 'google', 'us', true)
 		 RETURNING id`,
 		info.Email, info.ID, info.Name, info.Picture,
 	).Scan(&userID)
