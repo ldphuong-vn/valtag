@@ -1,4 +1,4 @@
-.PHONY: help dev down build test test-unit test-integration test-dashboard test-mcp lint migrate-up migrate-down seed clean security
+.PHONY: help dev down build test test-unit test-integration test-dashboard test-mcp lint migrate-up migrate-down seed clean security rotate-key
 
 help: ## Show available commands
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -39,6 +39,9 @@ migrate-up: ## Run database migrations
 
 migrate-down: ## Rollback last migration
 	docker compose run --rm server valtag-migrate down
+
+rotate-key: ## Re-wrap all master-key-encrypted data to a new key (server STOPPED; env OLD_MASTER_KEY + NEW_MASTER_KEY required)
+	docker compose run --rm -e OLD_MASTER_KEY=$${OLD_MASTER_KEY} -e NEW_MASTER_KEY=$${NEW_MASTER_KEY} server valtag-rotate-master-key
 
 seed: ## Seed development data
 	docker compose run --rm server valtag-seed
