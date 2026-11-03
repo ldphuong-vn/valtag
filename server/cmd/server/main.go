@@ -28,6 +28,7 @@ import (
 	"github.com/ldphuong-vn/valtag/server/internal/dynsecret"
 	"github.com/ldphuong-vn/valtag/server/internal/gateway"
 	custommiddleware "github.com/ldphuong-vn/valtag/server/internal/middleware"
+	"github.com/ldphuong-vn/valtag/server/internal/metrics"
 	"github.com/ldphuong-vn/valtag/server/internal/notify"
 	"github.com/ldphuong-vn/valtag/server/internal/rbac"
 	"github.com/ldphuong-vn/valtag/server/internal/org"
@@ -167,7 +168,7 @@ func main() {
 	// Redis rate limiter (optional — skip if REDIS_URL not set)
 	var agentRateLimiter *ratelimit.RedisLimiter
 	if cfg.RedisURL != "" {
-		rl, err := ratelimit.NewRedisLimiter(cfg.RedisURL)
+		rl, err := ratelimit.NewRedisLimiter(cfg.RedisURL, cfg.RateLimitFailOpen)
 		if err != nil {
 			log.Printf("Warning: Redis rate limiter init failed: %v", err)
 		} else {
@@ -175,7 +176,18 @@ func main() {
 			defer agentRateLimiter.Close()
 		}
 	}
-	// agentRateLimiter is wired into the authenticated route group below
+
+	// Audit IP trust: behind the Caddy proxy the real client IP arrives via
+	// X-Forwarded-For; on a directly-exposed server those headers are
+	// client-controlled, so trust is opt-in (report §4.7).
+	if !cfg.TrustProxyXFF {
+		auditLogger.SetTrustXFF(false)
+	}
+
+	// Prometheus metrics (opt-in via METRICS_ENABLED)
+	if cfg.MetricsEnabled {
+		metrics.Register()
+	}
 
 	// Billing (Stripe)
 	var billingHandler *billing.Handler
@@ -239,8 +251,17 @@ func main() {
 
 	r.Get("/health", healthHandler(pool))
 
+	// Prometheus metrics — opt-in, intended for scraping on an internal
+	// network (no auth: do not expose /metrics publicly when enabled).
+	if cfg.MetricsEnabled {
+		if mh := metrics.Handler(); mh != nil {
+			r.Handle("/metrics", mh)
+		}
+	}
+
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Use(custommiddleware.SecurityHeaders)
+		r.Use(metrics.Middleware)
 
 		r.Route("/auth", func(r chi.Router) {
 			// CLI polling endpoints — exempt from login rate limiter
@@ -310,10 +331,10 @@ func main() {
 		r.Group(func(r chi.Router) {
 			r.Use(auth.AuthMiddleware(pool, jwtMgr))
 			r.Use(apiLimiter.Middleware())
-			if agentRateLimiter != nil {
-				r.Use(agentRateLimiter.Middleware(60))
-			}
-
+			// No agentRateLimiter here: the agent limiter keys on the
+			// authenticated agent identity, which only exists on the
+			// dual-auth group above (header-based keying was spoofable —
+			// report §4.12). Humans in this group are covered by apiLimiter.
 			// TOTP 2FA management
 			r.Post("/me/totp/setup", totpHandler.Setup)
 			r.Post("/me/totp/verify", totpHandler.Verify)

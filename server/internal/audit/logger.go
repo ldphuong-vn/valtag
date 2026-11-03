@@ -39,12 +39,22 @@ type Entry struct {
 // assigns seq = last_seq + 1, inserts the entry, then advances the state row —
 // so seqs are contiguous and the chain has exactly one append order.
 type Logger struct {
-	pool *pgxpool.Pool
+	pool     *pgxpool.Pool
+	trustXFF bool
 }
 
-// NewLogger creates a new audit Logger.
+// NewLogger creates a new audit Logger. By default forwarded-client headers
+// (X-Forwarded-For / X-Real-IP) are trusted for IP attribution — the standard
+// deployment sits behind Caddy. Directly-exposed servers should call
+// SetTrustXFF(false): those headers are client-controlled there (report §4.7).
 func NewLogger(pool *pgxpool.Pool) *Logger {
-	return &Logger{pool: pool}
+	return &Logger{pool: pool, trustXFF: true}
+}
+
+// SetTrustXFF toggles whether X-Forwarded-For / X-Real-IP headers are used
+// for audit IP attribution. When false, the TCP peer address is used.
+func (l *Logger) SetTrustXFF(trust bool) {
+	l.trustXFF = trust
 }
 
 // Log writes a single audit entry and returns its assigned id and seq.
@@ -119,7 +129,7 @@ func (l *Logger) LogFromRequest(r *http.Request, userID, action, resourceType, r
 		ResourceID:   resourceID,
 		EventType:    "action",
 		Status:       "success",
-		IPAddress:    ExtractIP(r),
+		IPAddress:    ExtractIPTrusted(r, l.trustXFF),
 		UserAgent:    r.UserAgent(),
 	}
 	if _, err := l.Log(r.Context(), e); err != nil {
@@ -183,6 +193,10 @@ func (l *Logger) AppendChainNoTx(ctx context.Context, tx pgx.Tx, e Entry) (Entry
 // X-Forwarded-For entry, then X-Real-Ip, then the connection address without
 // its port. Raw header values may be lists or junk; Logger.Log canonicalizes
 // before persisting, so callers can pass the result straight through.
+//
+// Deprecated for audit attribution — use ExtractIPTrusted: trusting these
+// headers on a directly-exposed server lets clients spoof their audit IP
+// (report §4.7). Kept for the consent handler's non-attribution use.
 func ExtractIP(r *http.Request) string {
 	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
 		return xff
@@ -190,6 +204,29 @@ func ExtractIP(r *http.Request) string {
 	if xri := r.Header.Get("X-Real-Ip"); xri != "" {
 		return xri
 	}
+	return remoteHost(r)
+}
+
+// ExtractIPTrusted is ExtractIP with an explicit trust decision: when
+// trustXFF is false the forwarded headers are ignored and the TCP peer
+// address is used, so a directly-exposed server cannot have its audit IP
+// spoofed. When true, the LAST X-Forwarded-For entry is used — the value
+// appended by the nearest trusted proxy (earlier entries are
+// client-controlled).
+func ExtractIPTrusted(r *http.Request, trustXFF bool) string {
+	if trustXFF {
+		if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+			entries := strings.Split(xff, ",")
+			return strings.TrimSpace(entries[len(entries)-1])
+		}
+		if xri := r.Header.Get("X-Real-Ip"); xri != "" {
+			return xri
+		}
+	}
+	return remoteHost(r)
+}
+
+func remoteHost(r *http.Request) string {
 	// Strip port from RemoteAddr
 	host := r.RemoteAddr
 	for i := len(host) - 1; i >= 0; i-- {

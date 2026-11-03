@@ -45,6 +45,8 @@ services:
       JWT_PUBLIC_KEY_PATH: ${JWT_PUBLIC_KEY_PATH:-/app/keys/public.pem}
       VAULT_MASTER_KEY: ${VAULT_MASTER_KEY}
       CORS_ORIGINS: http://103.142.137.232,http://103.142.137.232:3000,https://app.${DOMAIN:-localhost}
+      TRUST_PROXY_XFF: "true" # behind Caddy TLS proxy
+      METRICS_ENABLED: ${METRICS_ENABLED:-false}
       SMTP_HOST: ${SMTP_HOST}
       SMTP_PORT: ${SMTP_PORT}
       SMTP_USER: ${SMTP_USER}

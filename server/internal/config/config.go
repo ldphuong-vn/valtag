@@ -44,6 +44,17 @@ type Config struct {
 
 	// Redis (optional — empty disables Redis-backed features)
 	RedisURL string `envconfig:"REDIS_URL" default:""`
+	// When the rate limiter's Redis is unreachable: false (default) rejects
+	// agent requests with 503 (fail-closed — the limit can't be bypassed by
+	// taking Redis down); true passes them through (availability first).
+	RateLimitFailOpen bool `envconfig:"RATE_LIMIT_FAIL_OPEN" default:"false"`
+	// Trust client IPs from X-Forwarded-For/X-Real-IP headers in audit
+	// entries. Enable ONLY when the server sits behind a trusted reverse
+	// proxy (the standard compose/prod topology); on a directly-exposed
+	// server these headers are client-controlled and spoofable (report §4.7).
+	TrustProxyXFF bool `envconfig:"TRUST_PROXY_XFF" default:"false"`
+	// Expose Prometheus metrics at /metrics (Go runtime + HTTP counters).
+	MetricsEnabled bool `envconfig:"METRICS_ENABLED" default:"false"`
 
 	// Base URL for generating action links in emails
 	BaseURL string `envconfig:"BASE_URL" default:"http://localhost:8080"`

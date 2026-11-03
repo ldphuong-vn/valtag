@@ -26,6 +26,7 @@ services:
       PORT: "8080"
       DATABASE_URL: postgres://${POSTGRES_USER:-valtag}:${POSTGRES_PASSWORD:-valtag_dev_password}@postgres:5432/${POSTGRES_DB:-valtag}?sslmode=disable
       CORS_ORIGINS: http://localhost:3000,http://localhost:8443
+      TRUST_PROXY_XFF: "true" # server sits behind the Caddy proxy
       JWT_PRIVATE_KEY_PATH: /app/keys/private.pem
       JWT_PUBLIC_KEY_PATH: /app/keys/public.pem
       VAULT_MASTER_KEY: ${VAULT_MASTER_KEY}

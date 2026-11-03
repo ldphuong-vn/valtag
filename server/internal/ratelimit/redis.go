@@ -11,17 +11,21 @@ import (
 
 // RedisLimiter implements sliding window rate limiting using Redis.
 type RedisLimiter struct {
-	client *redis.Client
+	client   *redis.Client
+	failOpen bool
 }
 
-// NewRedisLimiter creates a new Redis-backed rate limiter.
-func NewRedisLimiter(redisURL string) (*RedisLimiter, error) {
+// NewRedisLimiter creates a new Redis-backed rate limiter. failOpen decides
+// what happens when Redis is unreachable: false (default, fail-closed)
+// rejects agent requests with 503 until the limiter recovers; true lets
+// them through (availability over bypass-resistance).
+func NewRedisLimiter(redisURL string, failOpen bool) (*RedisLimiter, error) {
 	opt, err := redis.ParseURL(redisURL)
 	if err != nil {
 		return nil, fmt.Errorf("invalid redis URL: %w", err)
 	}
 	client := redis.NewClient(opt)
-	return &RedisLimiter{client: client}, nil
+	return &RedisLimiter{client: client, failOpen: failOpen}, nil
 }
 
 // Allow checks if agentID is within the rpm (requests per minute) limit.
@@ -45,13 +49,14 @@ func (l *RedisLimiter) Allow(ctx context.Context, agentID string, rpm int) (bool
 
 	cmds, err := pipe.Exec(ctx)
 	if err != nil {
-		// Redis failure — allow request (fail open)
-		return true, fmt.Errorf("redis error: %w", err)
+		// Redis failure — the middleware decides: fail-closed (default) or
+		// fail-open via the failOpen constructor flag (report §4.12).
+		return l.failOpen, fmt.Errorf("redis error: %w", err)
 	}
 
 	intCmd, ok := cmds[2].(*redis.IntCmd)
 	if !ok {
-		return true, fmt.Errorf("unexpected redis reply for ZCard")
+		return l.failOpen, fmt.Errorf("unexpected redis reply for ZCard")
 	}
 	return intCmd.Val() <= int64(rpm), nil
 }
