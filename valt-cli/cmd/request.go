@@ -66,10 +66,11 @@ func runRequest(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Printf("Request ID: %s\nStatus:     %s\n", req.ID, req.Status)
-	if req.Status == "pending" {
+	switch req.Status {
+	case "pending":
 		fmt.Printf("\nCheck status:  valtag status %s\n", req.ID)
 		fmt.Println("Approvers have been notified via email/Slack.")
-	} else if req.Status == "approved" {
+	case "approved":
 		fmt.Printf("\nAuto-approved. Get value:  valtag get %s\n", name)
 	}
 	return nil

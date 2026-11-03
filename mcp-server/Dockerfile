@@ -17,10 +17,10 @@ RUN cargo build --release
 FROM alpine:3.19
 
 RUN apk add --no-cache ca-certificates
-RUN adduser -D -g '' valt
+RUN adduser -D -g '' valtag
 
-COPY --from=builder /app/target/release/valt-mcp-server /usr/local/bin/
+COPY --from=builder /app/target/release/valtag-mcp-server /usr/local/bin/
 
-USER valt
+USER valtag
 
-CMD ["valt-mcp-server"]
+CMD ["valtag-mcp-server"]

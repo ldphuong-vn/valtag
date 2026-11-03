@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -66,23 +67,49 @@ func writeIDEConfig(path string, block []byte, ideName string) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
 		return err
 	}
-	// Read existing config, merge mcpServers key
-	existing := map[string]interface{}{}
-	if data, err := os.ReadFile(path); err == nil {
-		json.Unmarshal(data, &existing) //nolint:errcheck
+	existing, _ := os.ReadFile(path)
+	merged, err := mergeMCPConfig(existing, block)
+	if err != nil {
+		return fmt.Errorf("merging %s config at %s: %w", ideName, path, err)
 	}
-	var newCfg map[string]interface{}
-	json.Unmarshal(block, &newCfg) //nolint:errcheck
-	if servers, ok := newCfg["mcpServers"]; ok {
-		existing["mcpServers"] = servers
-	}
-	out, _ := json.MarshalIndent(existing, "", "  ")
+	out, _ := json.MarshalIndent(merged, "", "  ")
 	if err := os.WriteFile(path, out, 0644); err != nil {
 		return fmt.Errorf("writing %s config: %w", ideName, err)
 	}
 	fmt.Printf("✓ %s config updated: %s\n", ideName, path)
 	fmt.Println("Restart your IDE to load the MCP server.")
 	return nil
+}
+
+// mergeMCPConfig merges the valtag entry into an IDE config's mcpServers
+// map, preserving every other server entry and top-level key. A missing or
+// empty existing config yields a fresh one. A malformed existing config is
+// an error — overwriting it silently would destroy the user's other MCP
+// servers.
+func mergeMCPConfig(existingJSON, block []byte) (map[string]interface{}, error) {
+	existing := map[string]interface{}{}
+	if len(bytes.TrimSpace(existingJSON)) > 0 {
+		if err := json.Unmarshal(existingJSON, &existing); err != nil {
+			return nil, fmt.Errorf("existing config is not valid JSON (refusing to overwrite): %w", err)
+		}
+	}
+	newCfg := map[string]interface{}{}
+	if err := json.Unmarshal(block, &newCfg); err != nil {
+		return nil, fmt.Errorf("generated config invalid: %w", err)
+	}
+	servers, ok := newCfg["mcpServers"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("generated config has no mcpServers map")
+	}
+	userServers, ok := existing["mcpServers"].(map[string]interface{})
+	if !ok {
+		userServers = map[string]interface{}{}
+	}
+	for k, v := range servers {
+		userServers[k] = v
+	}
+	existing["mcpServers"] = userServers
+	return existing, nil
 }
 
 func findMCPBinary() (string, error) {

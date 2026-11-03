@@ -93,7 +93,7 @@ Next.js 15 App Router with `(auth)` and `(dashboard)` route groups. All authenti
 Rust binary (`valtag-mcp-server`). Runs on developer machine alongside the AI agent. Communicates via stdio JSON-RPC 2.0 (default) or HTTP. Connects to the Go API with a stored agent token. Path traversal prevention: rejects absolute paths, Windows drive letters, `..`, paths > 500 chars.
 
 ### Database migrations
-Sequential numbered SQL files in `server/internal/database/migrations/`. Currently at 000037. Migration runner: `valt-migrate` binary (`server/cmd/migrate/`).
+Sequential numbered SQL files in `server/internal/database/migrations/`. Currently at 000046. Migration runner: `valtag-migrate` binary (`server/cmd/migrate/`).
 
 ## Code Standards
 - Go: standard project layout, `internal/` for private packages

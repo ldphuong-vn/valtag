@@ -35,13 +35,13 @@ security: ## Run trivy security scan
 	trivy fs --severity HIGH,CRITICAL .
 
 migrate-up: ## Run database migrations
-	docker compose run --rm server valt-migrate up
+	docker compose run --rm server valtag-migrate up
 
 migrate-down: ## Rollback last migration
-	docker compose run --rm server valt-migrate down
+	docker compose run --rm server valtag-migrate down
 
 seed: ## Seed development data
-	docker compose run --rm server valt-seed
+	docker compose run --rm server valtag-seed
 
 logs: ## Tail all service logs
 	docker compose logs -f

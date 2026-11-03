@@ -72,6 +72,11 @@ func runDeleteSecret(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+// isHexDigit reports whether c is an ASCII hexadecimal digit.
+func isHexDigit(c rune) bool {
+	return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')
+}
+
 // looksLikeUUID returns true if s matches the UUID v4 pattern (8-4-4-4-12 hex chars).
 func looksLikeUUID(s string) bool {
 	if len(s) != 36 {
@@ -82,7 +87,7 @@ func looksLikeUUID(s string) bool {
 			if c != '-' {
 				return false
 			}
-		} else if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
+		} else if !isHexDigit(c) {
 			return false
 		}
 	}
