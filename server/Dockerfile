@@ -1,12 +1,17 @@
-# Build stage
-FROM golang:1.25-alpine AS builder
+# Build stage — builder Go version must match go.mod (go 1.26.x):
+# GOTOOLCHAIN=local makes the build deterministic instead of downloading a
+# toolchain from the module proxy at build time (GitHub runners share IPs
+# and those downloads get rate-limited).
+FROM golang:1.27-alpine AS builder
+
+ENV GOTOOLCHAIN=local
 
 RUN apk add --no-cache git ca-certificates
 
 WORKDIR /app
 
-COPY go.mod ./
-RUN go mod download || true
+COPY go.mod go.sum ./
+RUN go mod download
 
 COPY . .
 RUN go mod tidy
