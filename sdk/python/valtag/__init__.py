@@ -1,4 +1,4 @@
-"""Valt Python SDK - minimal client for the Valt secret vault API."""
+"""Valtag Python SDK - minimal client for the Valtag secret vault API."""
 
 import os
 import json
@@ -11,17 +11,17 @@ from typing import Optional, List, Dict, Any
 
 
 class ValtError(Exception):
-    """Raised when the Valt API returns an error."""
+    """Raised when the Valtag API returns an error."""
 
     def __init__(self, status: int, message: str) -> None:
         self.status = status
-        super().__init__(f"Valt API error {status}: {message}")
+        super().__init__(f"Valtag API error {status}: {message}")
 
 
 # Requests to private/loopback/link-local addresses are refused by default so
 # the SDK is safe to embed in server-side code. Local development against a
 # localhost deployment opts in explicitly.
-_ALLOW_PRIVATE = lambda: os.environ.get("VALT_ALLOW_PRIVATE_NETWORKS", "").lower() in ("1", "true", "yes")
+_ALLOW_PRIVATE = lambda: os.environ.get("VALTAG_ALLOW_PRIVATE_NETWORKS", "").lower() in ("1", "true", "yes")
 
 
 def _validate_target(url: str) -> None:
@@ -47,12 +47,12 @@ def _validate_target(url: str) -> None:
         ):
             raise ValueError(
                 f"refusing to connect to private address {ip} — set "
-                "VALT_ALLOW_PRIVATE_NETWORKS=1 to target local/internal deployments"
+                "VALTAG_ALLOW_PRIVATE_NETWORKS=1 to target local/internal deployments"
             )
 
 
 class ValtClient:
-    """Client for the Valt secret vault API."""
+    """Client for the Valtag secret vault API."""
 
     def __init__(
         self,
