@@ -8,7 +8,8 @@ before:
 
 builds:
   - id: valtag
-    dir: valt-cli
+    # GoReleaser runs with workdir: valt-cli (see release-valt-cli.yml)
+    dir: .
     main: .
     binary: valtag
     env:
@@ -27,7 +28,7 @@ builds:
 archives:
   - id: valtag
     builds: [valtag]
-    name_template: "valt_{{ .Os }}_{{ .Arch }}"
+    name_template: "valtag_{{ .Os }}_{{ .Arch }}"
     format_overrides:
       - goos: windows
         format: zip
@@ -36,9 +37,7 @@ checksum:
   name_template: "checksums.txt"
 
 release:
-  github:
-    owner: valtag-dev
-    name: valtag
+  # Repo owner/name inferred from the git remote (ldphuong-vn/valtag)
 
 changelog:
   sort: asc
