@@ -153,11 +153,11 @@ finding nào nằm ở các file thay đổi của đợt audit này. **Đã x�
 | Finding | Đánh giá | Trạng thái |
 |---|---|---|
 | Dashboard SSRF ×4 (`layout`, `secrets/[id]` ×2, `api/auth/refresh`, `api/proxy/[...path]`) | BFF fetch origin cố định từ env, path từ input | ✅ **Đã sửa**: helper chung `lib/backend.ts` — origin luôn từ `BACKEND_URL`, path segment validate (chặn `..`, `\`, CR/LF/NUL) + encode từng segment; 4 call site chuyển sang helper; tsc --noEmit pass |
-| `sdk/python/valt/__init__.py` SSRF | Client SDK fetch base_url từ config người dùng | ✅ **Đã sửa**: validate scheme http(s), resolve host và chặn private/loopback/link-local/reserved (opt-out `VALT_ALLOW_PRIVATE_NETWORKS=1` cho local dev), encode path segment |
+| `sdk/python/valtag/__init__.py` SSRF | Client SDK fetch base_url từ config người dùng | ✅ **Đã sửa**: validate scheme http(s), resolve host và chặn private/loopback/link-local/reserved (opt-out `VALT_ALLOW_PRIVATE_NETWORKS=1` cho local dev), encode path segment |
 | `valt-cli/cmd/setup.go:162` command injection | `openBrowser` exec tên binary qua biến + URL chưa validate | ✅ **Đã sửa**: validate scheme http(s) trước, exec literal từng nhánh (`rundll32 url.dll,FileProtocolHandler` cho Windows — tránh builtin `start` qua shell) |
 | `test_e2e.sh` + `test_e2e_comprehensive.py` + `run_e2e_tests.sh` hardcoded credentials | Password test + URL production hardcode trong source | ✅ **Đã sửa**: đọc từ env (`VALT_E2E_PASSWORD` bắt buộc, `VALT_E2E_BASE_URL` mặc định localhost:8080); URL production cũ `valt.turbo.ai.vn` không còn default ở test script nào |
 | `mcp-server/src/scanner.rs` hardcoded credential | Regex detection patterns cho secret scanner (AKIA…, ghp_…) — dữ liệu sản phẩm, không phải credential | Acknowledged FP — won't-fix |
-| `server/cmd/valt/commands/run.go` + `valt-cli/cmd/run.go` command injection | **By design** — `valt run -- <cmd>` là executor cục bộ (mô hình `op run`), args tách rời không qua shell. Write-hook của Mimosa chặn cả ghi comment vào 2 file này | Acknowledged by-owner — won't-fix; nhắc lại trong `--help` khi chạm vào file lần tới (tuần 11–12 release pipeline) |
+| `server/cmd/valtag/commands/run.go` + `valt-cli/cmd/run.go` command injection | **By design** — `valtag run -- <cmd>` là executor cục bộ (mô hình `op run`), args tách rời không qua shell. Write-hook của Mimosa chặn cả ghi comment vào 2 file này | Acknowledged by-owner — won't-fix; nhắc lại trong `--help` khi chạm vào file lần tới (tuần 11–12 release pipeline) |
 | `SOC-SIEM-HIPAA`, `echeckin-proposal` path traversal | Khác dự án (hook quét cả workspace) | Ngoài phạm vi vaultsaas |
 
 Lưu ý quy trình: hook commit của Mimosa quét theo workspace (không phải theo

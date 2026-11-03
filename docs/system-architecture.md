@@ -112,12 +112,12 @@ Developer Machine
         ├─ Device-like OAuth flow (browser redirect, validates callback on localhost)
         ├─ OS keychain: store OAuth token + agent token (macOS: Keychain, Linux: pass, Windows: Credential Manager)
         ├─ Auto-detect MCP server and update ~/.mcp/claude.json for seamless MCP install
-        └─ Config: ~/.valt/config.json (auth state, server URL)
+        └─ Config: ~/.valtag/config.json (auth state, server URL)
 ```
 
 - **OAuth flow**: CLI opens browser, authenticates user, receives temporary code → exchanges for token, stores in keychain
 - **Keychain integration**: Cross-platform (Keychain, pass, Credential Manager) via `internal/keychain.go`
-- **MCP installer**: Detects running MCP server, auto-updates `.mcp/claude.json` config to include valt
+- **MCP installer**: Detects running MCP server, auto-updates `.mcp/claude.json` config to include valtag
 - **Binary distribution**: `.goreleaser.yml` builds amd64/arm64 for macOS/Linux/Windows; published on GitHub Releases
 
 ## Test Architecture (Phase 1.7)

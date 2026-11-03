@@ -49,7 +49,7 @@ Cursor ──MCP/stdio──▶ valtag-mcp-server ──HTTPS──▶ valtag se
 One server, three ways to consume credentials:
 
 1. **MCP tools** (agents): `request_access` → human approves → `get_credential`. Works with any MCP client — Claude Code, Claude Desktop, Cursor, ZCode.
-2. **CLI injection** (humans & scripts): `valt run -- ./deploy.sh` runs your command with approved secrets injected as environment variables.
+2. **CLI injection** (humans & scripts): `valtag run -- ./deploy.sh` runs your command with approved secrets injected as environment variables.
 3. **Gateway proxy** (existing tooling): point tools at the proxy with a `valtag_pk_` placeholder; the real credential is injected inline on the way out.
 
 ## Quick start
@@ -58,7 +58,7 @@ One server, three ways to consume credentials:
 
 ```bash
 git clone https://github.com/ldphuong-vn/valtag.git
-cd vaultsaas
+cd valtag
 cp .env.example .env
 docker compose up -d
 make migrate-up
@@ -68,8 +68,15 @@ make migrate-up
 **2. Set up your machine** (one-time; installs the two clients):
 
 ```bash
-valt setup                    # login, stores token in your OS keychain
-valt mcp install --ide claude # wires valtag-mcp-server into Claude Code / Cursor / VS Code
+# macOS / Linux / WSL — one-line installer
+curl -fsSL https://raw.githubusercontent.com/ldphuong-vn/valtag/master/scripts/install-valt-cli.sh | bash
+# Windows: download valtag_windows_amd64.zip from Releases, or:
+#   go install github.com/ldphuong-vn/valtag/valt-cli@v0.1.0
+```
+
+```bash
+valtag setup                    # login, stores token in your OS keychain
+valtag mcp install --ide claude # wires valtag-mcp-server into Claude Code / Cursor / VS Code
 ```
 
 **3. First request** — from your AI tool, or from a terminal:
@@ -81,8 +88,8 @@ Agent: get_credential → usable for 30 min, then gone
 ```
 
 ```bash
-valt request prod-db-api       # same flow, human-typed
-valt run -- ./report.sh        # approved secrets injected as env vars
+valtag request prod-db-api       # same flow, human-typed
+valtag run -- ./report.sh        # approved secrets injected as env vars
 ```
 
 **4. Make a secret dynamically leased** — link it to a provider, and approvals mint fresh credentials instead of handing out the stored value:

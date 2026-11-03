@@ -5,7 +5,7 @@
 ```bash
 # Setup
 git clone https://github.com/ldphuong-vn/valtag.git
-cd valt
+cd valtag
 bash scripts/setup-dev.sh
 
 # Or manually:
@@ -35,7 +35,7 @@ make seed
 ### Deploy
 ```bash
 git clone https://github.com/ldphuong-vn/valtag.git
-cd valt
+cd valtag
 cp .env.example .env.prod  # configure production values
 docker compose -f docker-compose.prod.yml up -d
 ```

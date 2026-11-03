@@ -1,6 +1,6 @@
 # Project Changelog
 
-## [2.0.0] - 2026-03-19 — Phase 2: Product-Market Fit (Approval Channels, Custom Policies, valt CLI)
+## [2.0.0] - 2026-03-19 — Phase 2: Product-Market Fit (Approval Channels, Custom Policies, valtag CLI)
 
 ### Added
 
@@ -17,15 +17,15 @@
 - `GET /projects/{id}/policy` and `PUT /projects/{id}/policy` endpoints with project admin auth
 - Dashboard PolicyEditor component (shadcn/ui) for editing approval rules, duration caps, auto-approve overrides per secret and per project
 
-**Phase 2.3 — valt CLI**
-- CLI binary (Go) with config at `~/.valt/config.toml` and OS keychain token storage
-- `valt setup`: interactive onboarding with Google OAuth flow; org/project selection; agent token creation
-- `valt mcp install --ide claude|cursor|vscode`: MCP server config generation
-- `valt list`: lists accessible secrets with table output
-- `valt get <secret-name>`: retrieves secret value (auto-requests if denied, polls for approval)
-- `valt run -- <command>`: injects all project secrets as env vars; executes command
-- `valt request <secret-name> --reason "..." --duration 2h`: create access request via CLI
-- `valt status <request-id>`: check request approval status
+**Phase 2.3 — valtag CLI**
+- CLI binary (Go) with config at `~/.valtag/config.toml` and OS keychain token storage
+- `valtag setup`: interactive onboarding with Google OAuth flow; org/project selection; agent token creation
+- `valtag mcp install --ide claude|cursor|vscode`: MCP server config generation
+- `valtag list`: lists accessible secrets with table output
+- `valtag get <secret-name>`: retrieves secret value (auto-requests if denied, polls for approval)
+- `valtag run -- <command>`: injects all project secrets as env vars; executes command
+- `valtag request <secret-name> --reason "..." --duration 2h`: create access request via CLI
+- `valtag status <request-id>`: check request approval status
 - goreleaser config: cross-platform builds (Linux/Mac/Windows, amd64/arm64)
 - GitHub Actions CI/CD workflow for automated releases to GitHub Releases
 
@@ -174,7 +174,7 @@
 - Migrations `000021-000022`: `approval_steps` table, `rate_limit_rpm` column on `agent_identities`
 
 **Phase 14 — CLI + SDKs**
-- `server/cmd/valt/` — `valt` CLI (cobra): `login`, `secrets list/create`, `agents list/create`, `scan`, `run`; config at `~/.valt/config.json`
+- `server/cmd/valtag/` — `valtag` CLI (cobra): `login`, `secrets list/create`, `agents list/create`, `scan`, `run`; config at `~/.valtag/config.json`
 - `sdk/go/` — Go SDK (stdlib only, module `github.com/ldphuong-vn/valtag-go`)
 - `sdk/python/` — Python SDK (urllib only, zero dependencies)
 

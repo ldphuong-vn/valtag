@@ -115,11 +115,11 @@
 - [x] GET/PUT /secrets/{id}/policy and /projects/{project_id}/policy endpoints
 - [x] Dashboard PolicyEditor UI with per-secret and per-project settings pages
 
-### Phase 2.3: valt CLI (Ph01-05) [DONE - 2026-03-19]
+### Phase 2.3: valtag CLI (Ph01-05) [DONE - 2026-03-19]
 - [x] Project scaffold with config/keychain/API client (Cobra, go-keyring, toml)
-- [x] `valt setup` & `valt mcp install` (OAuth CLI flow, IDE config generation)
-- [x] `valt list` / `valt get` / `valt run` (secret listing, retrieval, env injection)
-- [x] `valt request` & `valt status` (access request creation and polling)
+- [x] `valtag setup` & `valtag mcp install` (OAuth CLI flow, IDE config generation)
+- [x] `valtag list` / `valtag get` / `valtag run` (secret listing, retrieval, env injection)
+- [x] `valtag request` & `valtag status` (access request creation and polling)
 - [x] goreleaser config & CI release workflow (cross-platform builds: Linux/Mac/Windows)
 
 ## Phase 3: Scale [Future]

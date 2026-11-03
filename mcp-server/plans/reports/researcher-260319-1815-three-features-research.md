@@ -102,7 +102,7 @@ CREATE TABLE master_key_shares (
    - "Request access" → opens browser to valtag approval UI
    - "Show approvals" → TreeView sub-panel listing pending requests
 4. **Status Bar:** Show "valtag: 2 pending approvals" → click to expand approvals panel
-5. **Command:** `valt-inject-env` → opens terminal, exports secrets as env vars
+5. **Command:** `valtag-inject-env` → opens terminal, exports secrets as env vars
 
 **Authentication Pattern:**
 - **Reuse existing agent token** (simplest) — token must have `read:secrets` + `read:workflow` perms.

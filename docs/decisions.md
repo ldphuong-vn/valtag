@@ -84,7 +84,7 @@ nổ phình scope (2.200 file, 6 service).
 ## Quyết định 5: Đúng 2 client — CLI (Go) là cửa vào duy nhất + MCP server (Rust)
 
 **Quyết định:** Không thêm client mới nào. Giữ `valt-cli` (Go) làm điểm vào:
-`valt setup` → `valt mcp install --ide claude` tự cài MCP server. Rust MCP server
+`valtag setup` → `valtag mcp install --ide claude` tự cài MCP server. Rust MCP server
 là client thật của các AI tool. Phát hành binary qua GitHub Releases + CI
 (cross-platform Windows/macOS/Linux, có checksum), **không bao giờ commit binary
 vào repo** (đã dọn 36MB .exe hôm 2026-08-31 và thêm rule .gitignore).

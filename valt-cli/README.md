@@ -1,21 +1,21 @@
-# valt CLI
+# valtag CLI
 
 Secret vault CLI for the valtag platform.
 
 ## Install
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/valt-dev/valt/main/scripts/install-valt-cli.sh | sh
+curl -sSL https://raw.githubusercontent.com/valtag-dev/valtag/main/scripts/install-valt-cli.sh | sh
 ```
 
 ## Quick start
 
 ```bash
-valt setup                      # configure + login + pick project
-valt mcp install --ide claude   # install MCP server for Claude Desktop
-valt list                       # list accessible secrets
-valt get DB_PASSWORD            # get a secret value
-valt run -- node server.js      # inject secrets + run command
-valt request DB_PASSWORD --reason "fixing prod" --duration 2h
-valt status <request-id>
+valtag setup                      # configure + login + pick project
+valtag mcp install --ide claude   # install MCP server for Claude Desktop
+valtag list                       # list accessible secrets
+valtag get DB_PASSWORD            # get a secret value
+valtag run -- node server.js      # inject secrets + run command
+valtag request DB_PASSWORD --reason "fixing prod" --duration 2h
+valtag status <request-id>
 ```

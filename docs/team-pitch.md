@@ -41,7 +41,7 @@ There's no middle ground: controlled, audited, time-limited access with a human 
 │  Developer Machine                                           │
 │  ├── IDE / AI Agent (Claude, Cursor, etc.)                   │
 │  │     └── valtag MCP Server (Rust, stdio JSON-RPC 2.0)       │
-│  └── valt CLI (Go) — headless secret access + env injection  │
+│  └── valtag CLI (Go) — headless secret access + env injection  │
 └─────────────────────────┬────────────────────────────────────┘
                           │  HTTPS
 ┌─────────────────────────▼────────────────────────────────────┐
@@ -74,7 +74,7 @@ There's no middle ground: controlled, audited, time-limited access with a human 
 └──────────────────────────────────────────────────────────────┘
 ```
 
-**Tech stack:** Go 1.22 (API) · Next.js 15 / shadcn/ui (dashboard) · Rust (MCP server) · Go (valt CLI) · PostgreSQL 16 · MinIO (S3-compatible) · Caddy (TLS proxy)
+**Tech stack:** Go 1.22 (API) · Next.js 15 / shadcn/ui (dashboard) · Rust (MCP server) · Go (valtag CLI) · PostgreSQL 16 · MinIO (S3-compatible) · Caddy (TLS proxy)
 
 ---
 
@@ -258,31 +258,31 @@ Approvers configure channels in `/settings → Notifications`.
 
 ---
 
-### Case 8: valt CLI (headless / CI access)
+### Case 8: valtag CLI (headless / CI access)
 
 For developers and scripts that don't use an IDE:
 
 ```bash
 # One-time setup: OAuth login, org/project selection, agent token
-valt setup
+valtag setup
 
 # Install MCP server config for your IDE
-valt mcp install --ide claude   # or cursor, vscode
+valtag mcp install --ide claude   # or cursor, vscode
 
 # List accessible secrets
-valt list
+valtag list
 
 # Get a secret value (auto-requests access + polls if needed)
-valt get STRIPE_API_KEY
+valtag get STRIPE_API_KEY
 
 # Inject all project secrets as env vars and run a command
-valt run -- npm run deploy
+valtag run -- npm run deploy
 
 # Create an access request manually
-valt request STRIPE_API_KEY --reason "deploy task" --duration 2h
+valtag request STRIPE_API_KEY --reason "deploy task" --duration 2h
 
 # Check status
-valt status req_xyz
+valtag status req_xyz
 ```
 
 Works headless — useful in CI pipelines where no browser is available. Agent token stored in OS keychain.
@@ -374,7 +374,7 @@ Agent rate limiting: 60 requests/minute per agent token (Redis-backed sliding wi
 | Slack bot approvals (Block Kit + HMAC) | ✅ Done |
 | Telegram bot approvals (inline keyboard + deep-link) | ✅ Done |
 | Email one-click approve/reject links | ✅ Done |
-| valt CLI (setup, list, get, run, request, status) | ✅ Done |
+| valtag CLI (setup, list, get, run, request, status) | ✅ Done |
 | goreleaser cross-platform builds + CI release | ✅ Done |
 | Tests (Go unit + dashboard + Rust) | ✅ Done |
 
@@ -398,7 +398,7 @@ Agent rate limiting: 60 requests/minute per agent token (Redis-backed sliding wi
 
 ```bash
 git clone <repo>
-cd valt
+cd valtag
 cp .env.example .env
 # Edit .env: set VAULT_MASTER_KEY, Google OAuth credentials
 

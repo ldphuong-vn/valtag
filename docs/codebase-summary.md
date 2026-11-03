@@ -41,7 +41,7 @@ vaultsaas/
 │   │   ├── server/          # Main entry point
 │   │   ├── migrate/         # Migration runner
 │   │   ├── seed/            # Data seeder
-│   │   └── valt/            # valt CLI binary (cobra) — login, secrets, agents, scan, run (Phase 14)
+│   │   └── valtag/            # valtag CLI binary (cobra) — login, secrets, agents, scan, run (Phase 14)
 │   ├── go.mod               # chi/v5, go-chi/cors, golang-jwt/jwt/v5, google/uuid, minio-go/v7,
 │   │   │                   #   golang.org/x/oauth2, testify/v1.9.0, go-redis/v9, cobra
 │   ├── go.sum
@@ -102,14 +102,14 @@ vaultsaas/
 │   ├── Cargo.toml
 │   └── Dockerfile
 │
-├── valt-cli/                # valt CLI binary (Go, Cobra) — standalone tool for agent-free credential access (Phase 2)
+├── valt-cli/                # valtag CLI binary (Go, Cobra) — standalone tool for agent-free credential access (Phase 2)
 │   ├── cmd/
 │   │   └── main.go          # CLI entry point
 │   ├── internal/
 │   │   ├── keychain.go      # OS keychain integration (cross-platform)
 │   │   ├── oauth.go         # Device-like OAuth flow with browser redirect
 │   │   ├── mcp_installer.go # Auto-detect MCP server and update config
-│   │   └── config.go        # Config at ~/.valt/config.json
+│   │   └── config.go        # Config at ~/.valtag/config.json
 │   ├── go.mod
 │   ├── .goreleaser.yml      # Cross-platform binary builds (goreleaser)
 │   └── README.md
@@ -142,7 +142,7 @@ vaultsaas/
 | Backend | Go 1.22, chi/v5 v5.1.0, go-chi/cors v1.2.1, golang-jwt/jwt/v5, google/uuid, minio-go/v7, golang.org/x/oauth2, testify v1.9.0, go-redis/v9, cobra |
 | Frontend | Next.js 15.1.0, React 19, TypeScript 5.7, Tailwind v4, shadcn/ui, lucide-react, Geist fonts, vitest |
 | MCP Server | Rust (tokio async, serde, reqwest, keyring, aes-gcm, axum, clap — see Cargo.toml) |
-| CLI | valt CLI (cobra), Go SDK (stdlib), Python SDK (urllib) |
+| CLI | valtag CLI (cobra), Go SDK (stdlib), Python SDK (urllib) |
 | Proxy | Caddy (CSP headers, HSTS, security headers) |
 | Cache | Redis (optional, REDIS_URL env var) — per-agent rate limiting |
 | Infra | Docker Compose (dev + prod), Makefile |
@@ -174,6 +174,6 @@ vaultsaas/
 - **dashboard**: Full Next.js App Router — sign-in, secrets CRUD, approvals, audit, orgs, projects (with policy editor), agents, scans, providers, settings/upgrade; BFF proxy; PolicyEditor, SecretPolicySection, ProjectPolicySection components; 19 vitest tests passing
 - **mcp-server**: 8 MCP tools, 3 resources; stdio + HTTP/SSE dual transport (axum); Bearer auth; 17 regex scanner patterns; OS keychain auth; 11+ unit tests passing
 - **sdk**: Go SDK (`github.com/ldphuong-vn/valtag-go`, stdlib only) and Python SDK (urllib only)
-- **cli**: `valt-cli` binary (Go, Cobra) standalone agent-free credential access; OAuth device-like flow with browser redirect, OS keychain integration, auto-detect MCP server for installation, config at `~/.valt/config.json`, cross-platform builds via goreleaser
+- **cli**: `valt-cli` binary (Go, Cobra) standalone agent-free credential access; OAuth device-like flow with browser redirect, OS keychain integration, auto-detect MCP server for installation, config at `~/.valtag/config.json`, cross-platform builds via goreleaser
 - **testing**: Makefile targets `test-unit`, `test-integration`, `test-dashboard`, `test-mcp`, `security`; `.golangci.yml` enabled
 - **infra**: Full Docker Compose (dev/prod) with JWT key volume mount, optional Redis, Caddy with CSP/security headers
