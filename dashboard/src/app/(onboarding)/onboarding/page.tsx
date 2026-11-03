@@ -1,12 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Shield, Building2, FolderOpen, CheckCircle2, ArrowRight, ChevronRight } from 'lucide-react'
+import { Shield, Building2, FolderOpen, CheckCircle2, ArrowRight, ChevronRight, Copy, Terminal, Bot, KeyRound } from 'lucide-react'
 import { api } from '@/lib/api-client'
 import type { Organization, Workspace } from '@/types/api'
 
-// Steps: org-confirm → project-create → done
-type Step = 'loading' | 'org-confirm' | 'project-create' | 'done'
+// Steps: org-confirm → project-create → connect → done
+type Step = 'loading' | 'org-confirm' | 'project-create' | 'connect' | 'done'
 
 export default function OnboardingPage() {
   const [step, setStep] = useState<Step>('loading')
@@ -17,6 +17,13 @@ export default function OnboardingPage() {
   const [projectSlug, setProjectSlug] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [copied, setCopied] = useState<number | null>(null)
+
+  function copyCommand(text: string, index: number) {
+    void navigator.clipboard?.writeText(text)
+    setCopied(index)
+    setTimeout(() => setCopied(null), 1500)
+  }
 
   // On mount: fetch user's first org + default workspace.
   // If they already have a project, skip to dashboard (idempotent).
@@ -113,7 +120,7 @@ export default function OnboardingPage() {
         window.dispatchEvent(new Event('valtag:workspace-changed'))
         window.dispatchEvent(new Event('valtag:project-changed'))
       }
-      setStep('done')
+      setStep('connect')
     } catch (e) {
       setError((e as Error).message)
     } finally {
@@ -129,8 +136,8 @@ export default function OnboardingPage() {
   }
 
   // --- Step progress indicator ---
-  const steps = ['Organization', 'Project', 'Done']
-  const stepIndex = step === 'loading' ? 0 : step === 'org-confirm' ? 0 : step === 'project-create' ? 1 : 2
+  const steps = ['Organization', 'Project', 'Connect', 'Done']
+  const stepIndex = step === 'loading' ? 0 : step === 'org-confirm' ? 0 : step === 'project-create' ? 1 : step === 'connect' ? 2 : 3
 
   if (step === 'loading') {
     return (
@@ -285,7 +292,7 @@ export default function OnboardingPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setStep('done')}
+                onClick={() => setStep('connect')}
                 className="px-4 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-accent transition-colors"
               >
                 Skip
@@ -294,7 +301,106 @@ export default function OnboardingPage() {
           </form>
         )}
 
-        {/* Step 3: Done */}
+        {/* Step 3: Connect your agents */}
+        {step === 'connect' && (
+          <div className="space-y-5">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <Bot className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">Connect your agents</h2>
+                <p className="text-xs text-muted-foreground">
+                  Three commands, then your AI agents ask instead of holding keys
+                </p>
+              </div>
+            </div>
+
+            <ol className="space-y-4">
+              <li className="space-y-2">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Terminal className="w-4 h-4 text-muted-foreground" />
+                  Install the valtag CLI
+                  <span className="text-xs font-normal text-muted-foreground">(macOS / Linux / WSL)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 px-3 py-2 rounded-lg bg-muted text-xs font-mono overflow-x-auto whitespace-nowrap">
+                    curl -fsSL https://raw.githubusercontent.com/ldphuong-vn/valtag/master/scripts/install-valt-cli.sh | bash
+                  </code>
+                  <button
+                    type="button"
+                    onClick={() => copyCommand('curl -fsSL https://raw.githubusercontent.com/ldphuong-vn/valtag/master/scripts/install-valt-cli.sh | bash', 0)}
+                    className="p-2 rounded-lg border hover:bg-accent transition-colors shrink-0"
+                    aria-label="Copy install command"
+                  >
+                    {copied === 0 ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Windows: grab <a href="https://github.com/ldphuong-vn/valtag/releases" target="_blank" rel="noreferrer" className="text-primary hover:underline">valtag_windows_amd64.zip</a> from Releases and add it to your PATH.
+                </p>
+              </li>
+
+              <li className="space-y-2">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <KeyRound className="w-4 h-4 text-muted-foreground" />
+                  Log in (token goes to your OS keychain)
+                </div>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 px-3 py-2 rounded-lg bg-muted text-xs font-mono">valtag setup</code>
+                  <button
+                    type="button"
+                    onClick={() => copyCommand('valtag setup', 1)}
+                    className="p-2 rounded-lg border hover:bg-accent transition-colors shrink-0"
+                    aria-label="Copy setup command"
+                  >
+                    {copied === 1 ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
+              </li>
+
+              <li className="space-y-2">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Bot className="w-4 h-4 text-muted-foreground" />
+                  Wire the MCP server into your IDE
+                </div>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 px-3 py-2 rounded-lg bg-muted text-xs font-mono">valtag mcp install --ide claude</code>
+                  <button
+                    type="button"
+                    onClick={() => copyCommand('valtag mcp install --ide claude', 2)}
+                    className="p-2 rounded-lg border hover:bg-accent transition-colors shrink-0"
+                    aria-label="Copy MCP install command"
+                  >
+                    {copied === 2 ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Other IDEs: run <span className="font-mono">valtag mcp install --help</span> for supported targets — Claude Code, Cursor, VS Code.
+                </p>
+              </li>
+            </ol>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => { window.location.href = '/secrets' }}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+              >
+                Add your first secret
+                <ArrowRight className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setStep('done')}
+                className="px-4 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-accent transition-colors"
+              >
+                Skip
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 4: Done */}
         {step === 'done' && (
           <div className="text-center space-y-6">
             <div className="flex justify-center">
@@ -305,7 +411,7 @@ export default function OnboardingPage() {
             <div>
               <h2 className="text-xl font-semibold mb-2">You're all set!</h2>
               <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                Your organization and workspace are ready. Start adding secrets and connecting your AI agents.
+                Organization, project and agents are connected. Every credential your agents touch now goes through the gate.
               </p>
             </div>
             <button
