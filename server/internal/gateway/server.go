@@ -69,12 +69,124 @@ func (s *Server) ListenAndServe(ctx context.Context) error {
 }
 
 // ServeHTTP dispatches proxy requests (HTTP CONNECT or regular HTTP).
+// POST /gateway/v1/authorize is the ext-auth endpoint for AI gateways
+// (Higress forward_auth): validate the presented derived key and return the
+// provider's real credential as response headers instead of proxying.
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPost && r.URL.Path == "/gateway/v1/authorize" {
+		s.handleAuthorize(w, r)
+		return
+	}
 	if r.Method == http.MethodConnect {
 		s.handleConnect(w, r)
 		return
 	}
 	s.handleHTTP(w, r)
+}
+
+// handleAuthorize implements POST /gateway/v1/authorize for Higress ext-auth
+// (forward_auth mode): the gateway forwards the agent's derived key, valtag
+// validates it against an active lease and returns the provider's real
+// credential as response headers for the gateway to inject upstream.
+//
+// Contract (chốt với Higress demo, 2026-11-04):
+//
+//	200 + authorization (real credential) + x-valtag-agent-id /
+//	x-valtag-lease-id / x-valtag-lease-expires   → allowed, inject headers
+//	401 / 403                                    → fail-closed deny
+//
+// An agent token alone (without a derived key) authorizes nothing here:
+// no lease means no credential to hand out.
+func (s *Server) handleAuthorize(w http.ResponseWriter, r *http.Request) {
+	agentID, lease, authErr := s.authenticateAuthorize(r)
+	if authErr != nil || lease == nil {
+		http.Error(w, "invalid or expired credential", http.StatusUnauthorized)
+		return
+	}
+
+	headerName, headerValue, err := s.leaseCredentialHeader(lease)
+	if err != nil {
+		log.Printf("gateway authorize: credential for lease %s: %v", lease.ID, err)
+		http.Error(w, "credential unavailable", http.StatusInternalServerError)
+		return
+	}
+
+	// Audit: every authorize call lands in the hash-chain — per-request
+	// trail for the gateway route without proxying through valtag.
+	s.logProxyRequest(r.Context(), agentID, audit.ExtractIPTrusted(r, true), r.UserAgent(),
+		"higress", "/gateway/v1/authorize", "authorize")
+
+	w.Header().Set(headerName, headerValue)
+	w.Header().Set("x-valtag-agent-id", agentID)
+	w.Header().Set("x-valtag-lease-id", lease.ID)
+	w.Header().Set("x-valtag-lease-expires", lease.ExpiresAt.UTC().Format(time.RFC3339))
+	w.WriteHeader(http.StatusOK)
+}
+
+// authenticateAuthorize resolves the caller of an authorize request: a
+// derived key alone (Authorization or Proxy-Authorization), optionally bound
+// to an agent token. Returns the agent id (lease-bound when the key is used
+// standalone) and the active lease. lease == nil means the caller presented
+// no usable credential for injection.
+func (s *Server) authenticateAuthorize(r *http.Request) (string, *dynsecret.LeaseInfo, error) {
+	if s.dynSvc == nil {
+		return "", nil, fmt.Errorf("derived API keys are not enabled")
+	}
+	// Derived key forwarded by Higress in Authorization (forward_auth), or in
+	// Proxy-Authorization for direct callers.
+	for _, header := range []string{"Authorization", "Proxy-Authorization"} {
+		key := bearerTokenFrom(r.Header.Get(header))
+		if !strings.HasPrefix(key, dynsecret.DerivedKeyPrefix) {
+			continue
+		}
+		agentID := ""
+		if s.agentSvc != nil {
+			if ident, tokenErr := s.validateAgentToken(r); tokenErr == nil {
+				agentID = ident
+			}
+		}
+		lease, err := derivedKeyAuth(r.Context(), s.dynSvc, key, agentID)
+		if err != nil {
+			logDerivedKeyError(agentID, err)
+			return "", nil, err
+		}
+		if lease.AgentID != nil && *lease.AgentID != "" {
+			agentID = *lease.AgentID
+		}
+		return agentID, lease, nil
+	}
+	return "", nil, fmt.Errorf("no derived key presented")
+}
+
+// leaseCredentialHeader computes the real upstream credential for a lease
+// per the provider's injection config and returns (header name, value).
+// Mirrors injectLeaseMasterKey without mutating a proxy request.
+func (s *Server) leaseCredentialHeader(lease *dynsecret.LeaseInfo) (string, string, error) {
+	pc, err := s.dynSvc.GetProvider(context.Background(), lease.ProviderID)
+	if err != nil {
+		return "", "", fmt.Errorf("provider not found: %w", err)
+	}
+	masterKey := pc.Config["master_key"]
+	if masterKey == "" {
+		return "", "", fmt.Errorf("provider %s has no master_key configured", pc.ID)
+	}
+
+	route := &ProxyRoute{
+		InjectionType:   pc.Config["injection_type"],
+		InjectionKey:    pc.Config["injection_key"],
+		InjectionFormat: "{value}",
+	}
+	if route.InjectionKey == "" {
+		route.InjectionType = "bearer"
+	}
+
+	value := formatValue(route.InjectionFormat, masterKey)
+	headerName := route.InjectionKey
+	if route.InjectionType == "bearer" || headerName == "" {
+		headerName = "Authorization"
+		value = "Bearer " + masterKey
+	}
+	return headerName, value, nil
 }
 
 // handleHTTP processes regular HTTP requests through the proxy.
