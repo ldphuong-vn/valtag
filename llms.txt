@@ -1,0 +1,23 @@
+# valtag
+
+> Ask-first credential gate for AI agents: an agent requests access, a human
+> approves, valtag mints a short-lived derived key (valtag_dk_…), the real
+> upstream credential never leaves the vault, every action lands in a
+> hash-chained audit trail. Self-hosted: Postgres is the only stateful piece.
+
+- API: `/api/v1` — Bearer user JWT or agent token
+- Health: `GET /health`; discovery: `/.well-known/valtag.json`
+- Gateway: `POST /gateway/v1/authorize` with `Authorization: Bearer valtag_dk_…`
+  (lease-bound key) — 200 returns the real upstream credential as response
+  headers (authorization + x-valtag-*); 401/403 = fail-closed
+- Errors: RFC 9457 Problem Details — send `Accept: application/problem+json`;
+  every error carries a stable `code`; rate-limited responses carry
+  `RateLimit-Limit` + `Retry-After`
+- MCP: `valtag-mcp-server` (stdio) — the ask-first flow as tools
+  (request_secret_access → check_approval_status → get_credential →
+  revoke_credential); install: `valtag mcp install --ide claude`
+- CLI: `valtag request create|status|get … --json` — machine-readable output
+- Docs: [AX contract](docs/ax.md) · [deployment](docs/deployment-guide.md) ·
+  [key rotation](docs/key-rotation.md) ·
+  [Higress integration demo](demo/higress/README.md)
+- Source: https://github.com/ldphuong-vn/valtag

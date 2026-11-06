@@ -83,6 +83,9 @@ func (rl *RateLimiter) IPMiddleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if !rl.allow(r.RemoteAddr) {
+				// AX: sliding window — Retry-After = window length (conservative
+				// upper bound; precise eviction time needs the oldest hit).
+				apierror.RetryAfter(w, int(rl.window.Seconds()))
 				apierror.TooManyRequests(w, "rate limit exceeded, try again later")
 				return
 			}
@@ -100,6 +103,7 @@ func (rl *RateLimiter) Middleware() func(http.Handler) http.Handler {
 				key = r.RemoteAddr
 			}
 			if !rl.allow(key) {
+				apierror.RetryAfter(w, int(rl.window.Seconds()))
 				apierror.TooManyRequests(w, "rate limit exceeded, try again later")
 				return
 			}

@@ -100,14 +100,16 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleAuthorize(w http.ResponseWriter, r *http.Request) {
 	agentID, lease, authErr := s.authenticateAuthorize(r)
 	if authErr != nil || lease == nil {
-		http.Error(w, "invalid or expired credential", http.StatusUnauthorized)
+		writeProblem(w, http.StatusUnauthorized, "invalid_or_expired_credential",
+			"invalid or expired credential", nil)
 		return
 	}
 
 	headerName, headerValue, err := s.leaseCredentialHeader(lease)
 	if err != nil {
 		log.Printf("gateway authorize: credential for lease %s: %v", lease.ID, err)
-		http.Error(w, "credential unavailable", http.StatusInternalServerError)
+		writeProblem(w, http.StatusInternalServerError, "credential_unavailable",
+			"credential unavailable", nil)
 		return
 	}
 
@@ -197,7 +199,8 @@ func (s *Server) handleHTTP(w http.ResponseWriter, r *http.Request) {
 	// own also authenticates — the lease carries the entitlement.
 	agentID, lease, authErr := s.authenticateRequest(r)
 	if authErr != nil {
-		http.Error(w, "Proxy Authentication Required", http.StatusProxyAuthRequired)
+		writeProblem(w, http.StatusProxyAuthRequired, "proxy_auth_required",
+			"Proxy Authentication Required", nil)
 		return
 	}
 
@@ -209,7 +212,8 @@ func (s *Server) handleHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Block SSRF: reject requests to private/internal IPs
 	if isPrivateHost(targetHost) {
-		http.Error(w, "Forbidden: private network access blocked", http.StatusForbidden)
+		writeProblem(w, http.StatusForbidden, "private_network_blocked",
+			"Forbidden: private network access blocked", nil)
 		return
 	}
 
@@ -222,7 +226,8 @@ func (s *Server) handleHTTP(w http.ResponseWriter, r *http.Request) {
 		log.Printf("gateway: endpoint limit check error: %v", err)
 	}
 	if limit != nil && limit.Blocked {
-		http.Error(w, "Forbidden: endpoint blocked for this agent", http.StatusForbidden)
+		writeProblem(w, http.StatusForbidden, "endpoint_blocked",
+			"Forbidden: endpoint blocked for this agent", nil)
 		return
 	}
 
@@ -256,14 +261,14 @@ func (s *Server) handleHTTP(w http.ResponseWriter, r *http.Request) {
 	if lease != nil {
 		if injectErr := s.injectLeaseMasterKey(r, lease); injectErr != nil {
 			log.Printf("gateway: master key injection error for lease %s: %v", lease.ID, injectErr)
-			http.Error(w, "internal proxy error", http.StatusBadGateway)
+			writeProblem(w, http.StatusBadGateway, "proxy_error", "internal proxy error", nil)
 			return
 		}
 	} else if route != nil {
 		secretValue, decryptErr := s.decryptSecret(r.Context(), route.SecretID)
 		if decryptErr != nil {
 			log.Printf("gateway: decrypt error for secret %s: %v", route.SecretID, decryptErr)
-			http.Error(w, "internal proxy error", http.StatusBadGateway)
+			writeProblem(w, http.StatusBadGateway, "proxy_error", "internal proxy error", nil)
 			return
 		}
 		// Strip placeholder before injecting real value
@@ -288,7 +293,7 @@ func (s *Server) handleHTTP(w http.ResponseWriter, r *http.Request) {
 
 	outReq, err := http.NewRequestWithContext(r.Context(), r.Method, outURL.String(), r.Body)
 	if err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
+		writeProblem(w, http.StatusBadRequest, "bad_request", "bad request", nil)
 		return
 	}
 	outReq.Header = r.Header.Clone()
@@ -297,7 +302,8 @@ func (s *Server) handleHTTP(w http.ResponseWriter, r *http.Request) {
 	// 7. Forward
 	resp, err := s.client.Do(outReq)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("upstream error: %v", err), http.StatusBadGateway)
+		writeProblem(w, http.StatusBadGateway, "upstream_error",
+			fmt.Sprintf("upstream error: %v", err), nil)
 		return
 	}
 	defer resp.Body.Close()
@@ -323,13 +329,15 @@ func (s *Server) handleHTTP(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleConnect(w http.ResponseWriter, r *http.Request) {
 	agentID, _, err := s.authenticateRequest(r)
 	if err != nil {
-		http.Error(w, "Proxy Authentication Required", http.StatusProxyAuthRequired)
+		writeProblem(w, http.StatusProxyAuthRequired, "proxy_auth_required",
+			"Proxy Authentication Required", nil)
 		return
 	}
 
 	// Block SSRF: reject connections to private/internal IPs
 	if isPrivateHost(r.Host) {
-		http.Error(w, "Forbidden: private network access blocked", http.StatusForbidden)
+		writeProblem(w, http.StatusForbidden, "private_network_blocked",
+			"Forbidden: private network access blocked", nil)
 		return
 	}
 
@@ -337,20 +345,22 @@ func (s *Server) handleConnect(w http.ResponseWriter, r *http.Request) {
 	host := stripPort(r.Host)
 	limit, _ := s.store.FindEndpointLimit(r.Context(), agentID, host, "/*")
 	if limit != nil && limit.Blocked {
-		http.Error(w, "Forbidden: endpoint blocked", http.StatusForbidden)
+		writeProblem(w, http.StatusForbidden, "endpoint_blocked",
+			"Forbidden: endpoint blocked", nil)
 		return
 	}
 
 	// Establish TCP tunnel
 	targetConn, err := net.DialTimeout("tcp", r.Host, 10*time.Second)
 	if err != nil {
-		http.Error(w, "bad gateway", http.StatusBadGateway)
+		writeProblem(w, http.StatusBadGateway, "bad_gateway", "bad gateway", nil)
 		return
 	}
 
 	hijacker, ok := w.(http.Hijacker)
 	if !ok {
-		http.Error(w, "hijacking not supported", http.StatusInternalServerError)
+		writeProblem(w, http.StatusInternalServerError, "hijack_unsupported",
+			"hijacking not supported", nil)
 		targetConn.Close()
 		return
 	}

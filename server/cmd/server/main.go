@@ -24,6 +24,7 @@ import (
 	"github.com/ldphuong-vn/valtag/server/internal/integration"
 	"github.com/ldphuong-vn/valtag/server/internal/config"
 	"github.com/ldphuong-vn/valtag/server/internal/consent"
+	"github.com/ldphuong-vn/valtag/server/internal/discovery"
 	"github.com/ldphuong-vn/valtag/server/internal/database"
 	"github.com/ldphuong-vn/valtag/server/internal/dynsecret"
 	"github.com/ldphuong-vn/valtag/server/internal/gateway"
@@ -250,6 +251,11 @@ func main() {
 	}))
 
 	r.Get("/health", healthHandler(pool))
+
+	// AX discovery: machine-readable service description (/.well-known/) and
+	// the llms.txt agent map — both rendered from the running config.
+	r.Get("/.well-known/valtag.json", discovery.Handler(cfg.GatewayEnabled, cfg.GatewayPort))
+	r.Get("/llms.txt", discovery.LLMSText(cfg.GatewayEnabled))
 
 	// Prometheus metrics — opt-in, intended for scraping on an internal
 	// network (no auth: do not expose /metrics publicly when enabled).

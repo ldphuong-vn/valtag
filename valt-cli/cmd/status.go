@@ -32,6 +32,11 @@ func runStatus(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("fetching request: %w", err)
 	}
 
+	if jsonFlag {
+		// AX: agents poll this — one JSON document on stdout, chatter on stderr.
+		return printJSON(req)
+	}
+
 	fmt.Printf("Request:  %s\n", req.ID)
 	fmt.Printf("Secret:   %s\n", req.SecretName)
 	fmt.Printf("Status:   %s\n", req.Status)

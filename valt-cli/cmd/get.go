@@ -51,6 +51,13 @@ func runGet(cmd *cobra.Command, args []string) error {
 	}
 	err := client.Get(context.Background(), "/credentials/by-secret/"+secretID, &cred)
 	if err == nil && cred.Value != "" {
+		if jsonFlag {
+			return printJSON(struct {
+				Secret string `json:"secret"`
+				Status string `json:"status"`
+				Value  string `json:"value"`
+			}{name, cred.Status, cred.Value})
+		}
 		fmt.Print(cred.Value) // no newline — safe for $(valtag get NAME)
 		return nil
 	}
@@ -78,8 +85,24 @@ func runGet(cmd *cobra.Command, args []string) error {
 			Value string `json:"value"`
 		}
 		client.Get(context.Background(), "/credentials/"+req.ID, &c) //nolint:errcheck
+		if jsonFlag {
+			return printJSON(struct {
+				Secret string `json:"secret"`
+				Status string `json:"status"`
+				Value  string `json:"value"`
+			}{name, "approved", c.Value})
+		}
 		fmt.Print(c.Value)
 		return nil
+	}
+
+	if jsonFlag {
+		// AX: agents poll valtag status <id> --json until approved.
+		return printJSON(struct {
+			Secret     string `json:"secret"`
+			RequestID  string `json:"request_id"`
+			Status     string `json:"status"`
+		}{name, req.ID, req.Status})
 	}
 
 	fmt.Fprintf(os.Stderr, "Access request created (ID: %s). Run: valtag status %s\n", req.ID, req.ID)

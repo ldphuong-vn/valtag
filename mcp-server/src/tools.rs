@@ -10,12 +10,12 @@ pub fn list_tools() -> Vec<ToolDef> {
     vec![
         ToolDef {
             name: "request_secret_access".into(),
-            description: "Request temporary access to a secret. Returns request ID for status checking.".into(),
+            description: "Ask a human to approve temporary access to a secret (valtag is ask-first: nothing is returned until an approver accepts). Get secret_id from list_my_secrets first. Returns a request_id — poll check_approval_status with it until the status is 'approved', then call get_credential.".into(),
             input_schema: json!({
                 "type": "object",
                 "properties": {
-                    "secret_id": {"type": "string", "description": "UUID of the secret"},
-                    "reason": {"type": "string", "description": "Why access is needed"},
+                    "secret_id": {"type": "string", "description": "UUID of the secret (from list_my_secrets)"},
+                    "reason": {"type": "string", "description": "Why access is needed — the approver reads this; be specific (task, scope, duration)"},
                     "duration_minutes": {"type": "integer", "description": "Requested duration (1-60)", "default": 30}
                 },
                 "required": ["secret_id", "reason"]
@@ -23,18 +23,18 @@ pub fn list_tools() -> Vec<ToolDef> {
         },
         ToolDef {
             name: "check_approval_status".into(),
-            description: "Check the approval status of an access request.".into(),
+            description: "Check whether a human approved an access request. Statuses: 'pending' = wait and call this again (approver was notified); 'approved' = proceed to get_credential; 'rejected' = do not retry the same request, request_secret_access again with a better reason; 'expired' = start over.".into(),
             input_schema: json!({
                 "type": "object",
                 "properties": {
-                    "request_id": {"type": "string", "description": "UUID of the access request"}
+                    "request_id": {"type": "string", "description": "UUID of the access request (from request_secret_access)"}
                 },
                 "required": ["request_id"]
             }),
         },
         ToolDef {
             name: "get_credential".into(),
-            description: "Retrieve an approved credential's value. Returns the secret value if the session is active.".into(),
+            description: "Retrieve the credential value for an APPROVED access request. If the request is still pending this fails — call check_approval_status first. Use the value, then prefer revoke_credential when done instead of letting it ride to expiry.".into(),
             input_schema: json!({
                 "type": "object",
                 "properties": {
@@ -105,7 +105,7 @@ pub fn list_tools() -> Vec<ToolDef> {
         },
         ToolDef {
             name: "request_dynamic_secret".into(),
-            description: "Request a temporary credential from a dynamic secret provider (e.g., temporary Postgres role). Returns credentials that auto-expire.".into(),
+            description: "Mint a short-lived credential from a dynamic provider (e.g., a temporary Postgres role) — no human approval needed, but the lease auto-expires and is audited. Get provider_id from your project's provider list. Returns credentials plus their expiry; re-request after expiry rather than caching them.".into(),
             input_schema: json!({
                 "type": "object",
                 "properties": {

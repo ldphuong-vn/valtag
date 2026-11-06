@@ -3,9 +3,18 @@ package ratelimit
 import (
 	"context"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/ldphuong-vn/valtag/server/internal/agent"
+	"github.com/ldphuong-vn/valtag/server/pkg/apierror"
 )
+
+// secondsToNextMinute: the agent limiter is a per-minute fixed window, so a
+// denied request retries at the next boundary (Retry-After, RFC headers).
+func secondsToNextMinute(now time.Time) int {
+	return 60 - now.Second()
+}
 
 // Limiter is the minimal contract the middleware needs — RedisLimiter
 // implements it; tests can stub it.
@@ -37,17 +46,21 @@ func Middleware(l Limiter, rpm int) func(http.Handler) http.Handler {
 					next.ServeHTTP(w, r)
 					return
 				}
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusServiceUnavailable)
-				_, _ = w.Write([]byte(`{"error":"rate limiter unavailable"}`))
+				// AX: fail-closed 503 with standard retry guidance (report §4.12).
+				w.Header().Set("RateLimit-Limit", strconv.Itoa(rpm))
+				apierror.RetryAfter(w, 5)
+				apierror.Write(w, http.StatusServiceUnavailable,
+					"rate_limiter_unavailable", "rate limiter unavailable")
 				return
 			}
 			if !allowed {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusTooManyRequests)
-				_, _ = w.Write([]byte(`{"error":"rate limit exceeded"}`))
+				// AX: standard rate-limit headers + retry at the window boundary.
+				w.Header().Set("RateLimit-Limit", strconv.Itoa(rpm))
+				apierror.RetryAfter(w, secondsToNextMinute(time.Now()))
+				apierror.TooManyRequests(w, "rate limit exceeded")
 				return
 			}
+			w.Header().Set("RateLimit-Limit", strconv.Itoa(rpm))
 			next.ServeHTTP(w, r)
 		})
 	}
