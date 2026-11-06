@@ -1,0 +1,15 @@
+{
+  "apiVersion": "extensions.higress.io/v1alpha1",
+  "kind": "WasmPlugin",
+  "metadata": {
+    "name": "key-auth",
+    "namespace": "higress-system"
+  },
+  "spec": {
+    "url": "http://127.0.0.1:8002/plugins/key-auth/2.0.0/plugin.wasm",
+    "phase": "AUTHN",
+    "priority": 320,
+    "defaultConfigDisable": true,
+    "matchRules": []
+  }
+}

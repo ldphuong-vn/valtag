@@ -1,0 +1,32 @@
+{
+  "kind": "McpBridge",
+  "apiVersion": "networking.higress.io/v1",
+  "metadata": {
+    "name": "default",
+    "namespace": "higress-system"
+  },
+  "spec": {
+    "registries": [
+      {
+        "type": "static",
+        "name": "higress-console",
+        "domain": "127.0.0.1:8001",
+        "port": 80
+      },
+      {
+        "type": "dns",
+        "name": "whoami-demo",
+        "domain": "whoami.demo.internal",
+        "port": 80,
+        "protocol": "http"
+      },
+      {
+        "type": "dns",
+        "name": "valtag-server",
+        "domain": "valtag.demo.internal",
+        "port": 10256,
+        "protocol": "http"
+      }
+    ]
+  }
+}

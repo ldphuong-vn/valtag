@@ -1,0 +1,5 @@
+# Shell scripts and CR templates must stay LF — CRLF breaks bash on Linux/macOS.
+*.sh text eol=lf
+cr/*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf

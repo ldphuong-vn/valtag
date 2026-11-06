@@ -1,0 +1,51 @@
+# valtag × Higress demo — Higress side.
+#
+# One all-in-one Higress container (console + gateway + apiserver) plus a
+# `whoami` echo backend used to PROVE credential injection: whatever headers
+# the upstream receives are echoed back in the response body.
+#
+# Ports (override with env):
+#   HIGRESS_HTTP_PORT    gateway HTTP   (default 8880 — avoids the valtag server's 8080)
+#   HIGRESS_HTTPS_PORT   gateway HTTPS  (default 8843)
+#   HIGRESS_CONSOLE_PORT console       (default 8001, loopback only — use an SSH
+#                        tunnel or a reverse proxy; never expose it as-is)
+#   HIGRESS_PROJECT      compose project name (default higress-demo)
+#
+# After `up`, run ./apply.sh — it registers the whoami service, creates the
+# /whoami route and wires the demo plugins through Higress' internal apiserver
+# (no console clicking required).
+
+name: ${HIGRESS_PROJECT:-higress-demo}
+
+services:
+  higress:
+    image: higress-registry.ap-southeast-7.cr.aliyuncs.com/higress/all-in-one:latest
+    # Mirrors (same tags): higress-registry.cn-hangzhou.cr.aliyuncs.com/higress/all-in-one
+    #                      higress-registry.us-west-1.cr.aliyuncs.com/higress/all-in-one
+    restart: unless-stopped
+    ports:
+      - "${HIGRESS_CONSOLE_PORT:-8001}:8001" # console — loopback usage recommended, see README
+      - "${HIGRESS_HTTP_PORT:-8880}:8080"    # gateway HTTP
+      - "${HIGRESS_HTTPS_PORT:-8843}:8443"   # gateway HTTPS (self-signed default cert)
+    volumes:
+      - higress-data:/data                   # console/apiserver state survives restarts
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8001"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 90s # the Java console starts slowly
+
+  # Demo upstream: echoes every received header into the response body.
+  # When valtag authorizes a request, the REAL upstream credential shows up
+  # here — and the valtag derived key does NOT (it is replaced at the gateway).
+  whoami:
+    image: traefik/whoami:v1.10.3
+    restart: unless-stopped
+    networks:
+      default:
+        aliases:
+          - whoami.demo.internal # McpBridge dns registries require a dotted FQDN
+
+volumes:
+  higress-data:

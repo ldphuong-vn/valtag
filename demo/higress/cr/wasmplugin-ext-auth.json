@@ -1,0 +1,44 @@
+{
+  "apiVersion": "extensions.higress.io/v1alpha1",
+  "kind": "WasmPlugin",
+  "metadata": {
+    "name": "ext-auth",
+    "namespace": "higress-system"
+  },
+  "spec": {
+    "url": "http://127.0.0.1:8002/plugins/ext-auth/2.0.3/plugin.wasm",
+    "phase": "AUTHN",
+    "priority": 320,
+    "defaultConfigDisable": true,
+    "matchRules": [
+      {
+        "ingress": ["whoami"],
+        "config": {
+          "http_service": {
+            "endpoint_mode": "forward_auth",
+            "endpoint": {
+              "service_name": "valtag-server.dns",
+              "service_port": 10256,
+              "path": "/gateway/v1/authorize",
+              "request_method": "POST",
+              "timeout": 1000
+            },
+            "authorization_request": {
+              "allowed_headers": [
+                { "exact": "x-valtag-agent-id" }
+              ]
+            },
+            "authorization_response": {
+              "allowed_upstream_headers": [
+                { "exact": "authorization" },
+                { "prefix": "x-valtag-" }
+              ]
+            }
+          },
+          "failure_mode_allow": false,
+          "status_on_error": 403
+        }
+      }
+    ]
+  }
+}

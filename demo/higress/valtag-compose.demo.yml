@@ -1,0 +1,28 @@
+# valtag side of the demo — override on top of the repo's dev compose.
+#
+# From the REPO ROOT (after `make dev`):
+#   docker compose -f docker-compose.yml -f demo/higress/valtag-compose.demo.yml up -d server
+#
+# Adds:
+#   - GATEWAY_ENABLED/GATEWAY_PORT — the gateway listener Higress ext-auth calls
+#     (default 10256, server/internal/config/config.go)
+#   - joins the higress-demo compose network with the dotted alias the demo's
+#     McpBridge dns registry expects (valtag-server.dns → valtag.demo.internal)
+#
+# Requires the higress demo stack to be up first (the network is external):
+#   cd demo/higress && docker compose up -d
+
+services:
+  server:
+    environment:
+      GATEWAY_ENABLED: "true"
+      GATEWAY_PORT: "10256"
+    networks:
+      higress-demo:
+        aliases:
+          - valtag.demo.internal
+
+networks:
+  higress-demo:
+    external: true
+    name: ${HIGRESS_PROJECT:-higress-demo}_default
