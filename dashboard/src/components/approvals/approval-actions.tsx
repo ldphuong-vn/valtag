@@ -12,9 +12,10 @@ interface Props {
   request: AccessRequest | null
   onClose: () => void
   onSuccess: () => void
+  onResult?: (message: string) => void
 }
 
-export default function ApprovalActions({ request, onClose, onSuccess }: Props) {
+export default function ApprovalActions({ request, onClose, onSuccess, onResult }: Props) {
   const [reason, setReason] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -25,6 +26,7 @@ export default function ApprovalActions({ request, onClose, onSuccess }: Props) 
     setError('')
     try {
       await api.requests.approve(request.id, { reason: reason || undefined })
+      onResult?.(`Approved "${request.secret_name ?? request.id.slice(0, 8)}…" — the requester can now retrieve the credential.`)
       onSuccess()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to approve')
@@ -40,6 +42,7 @@ export default function ApprovalActions({ request, onClose, onSuccess }: Props) 
     setError('')
     try {
       await api.requests.reject(request.id, { reason })
+      onResult?.(`Rejected "${request.secret_name ?? request.id.slice(0, 8)}…" — the requester sees the reason on their next check.`)
       onSuccess()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to reject')

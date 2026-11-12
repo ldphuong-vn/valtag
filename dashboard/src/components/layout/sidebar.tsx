@@ -37,6 +37,42 @@ export default function Sidebar() {
       setWorkspaceName(wsId ? (wsName || 'Workspace selected') : null)
     }
     updateHref()
+    // Self-heal: a returning user whose localStorage was cleared (new browser,
+    // cleared site data) otherwise sees "No workspace selected" forever —
+    // re-derive the context from their first org/workspace/project.
+    async function ensureContext() {
+      if (localStorage.getItem('valt_current_workspace')) return
+      try {
+        const orgsRes = await fetch('/api/proxy/orgs', { credentials: 'include' })
+        const orgsData = await orgsRes.json()
+        const orgs = Array.isArray(orgsData) ? orgsData : (orgsData.orgs ?? [])
+        const org = orgs[0]
+        if (!org) return
+        const wsRes = await fetch(`/api/proxy/orgs/${org.id}/workspaces`, { credentials: 'include' })
+        const wsData = await wsRes.json()
+        const workspaces = Array.isArray(wsData) ? wsData : (wsData.workspaces ?? [])
+        const ws = workspaces[0]
+        if (!ws) return
+        localStorage.setItem('valt_current_org', org.id)
+        localStorage.setItem('valt_current_workspace', ws.id)
+        localStorage.setItem('valt_current_workspace_name', ws.name ?? 'Workspace')
+        let projectId: string | null = null
+        const projRes = await fetch(`/api/proxy/workspaces/${ws.id}/projects`, { credentials: 'include' })
+        const projData = await projRes.json()
+        const projects = Array.isArray(projData) ? projData : (projData.projects ?? [])
+        if (projects[0]?.id) {
+          projectId = projects[0].id
+          localStorage.setItem('valt_current_project', projectId as string)
+        }
+        if (!projectId) return
+        updateHref()
+        window.dispatchEvent(new Event('valtag:workspace-changed'))
+        if (projectId) window.dispatchEvent(new Event('valtag:project-changed'))
+      } catch {
+        // stay on the "No workspace selected" state — user can pick via /orgs
+      }
+    }
+    void ensureContext()
     window.addEventListener('storage', updateHref)
     window.addEventListener('valtag:project-changed', updateHref)
     window.addEventListener('valtag:workspace-changed', updateHref)

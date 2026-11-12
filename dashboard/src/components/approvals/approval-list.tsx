@@ -7,6 +7,7 @@ import type { AccessRequest } from '@/types/api'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import ApprovalActions from './approval-actions'
 
 const TABS = ['all', 'pending', 'approved', 'rejected'] as const
@@ -23,6 +24,13 @@ export default function ApprovalList() {
   const [tab, setTab] = useState<Tab>('all')
   const [loading, setLoading] = useState(true)
   const [actionsFor, setActionsFor] = useState<AccessRequest | null>(null)
+  // (d) dogfood: approve/reject left an empty filtered table with no feedback.
+  const [notice, setNotice] = useState('')
+  // (e) dogfood: approved requests had no way to view the granted credential.
+  const [credentialFor, setCredentialFor] = useState<AccessRequest | null>(null)
+  const [credential, setCredential] = useState<{ value: string; status: string; expires_at?: string } | null>(null)
+  const [credentialLoading, setCredentialLoading] = useState(false)
+  const [credentialError, setCredentialError] = useState('')
 
   async function load() {
     setLoading(true)
@@ -36,6 +44,33 @@ export default function ApprovalList() {
     }
   }
 
+  async function openCredential(req: AccessRequest) {
+    setCredentialFor(req)
+    setCredential(null)
+    setCredentialError('')
+    setCredentialLoading(true)
+    try {
+      const c = await api.credentials.get(req.id)
+      setCredential({ value: c.value ?? '', status: c.status ?? 'active', expires_at: (c as { expires_at?: string }).expires_at })
+    } catch (e) {
+      setCredentialError(e instanceof Error ? e.message : 'Failed to load credential')
+    } finally {
+      setCredentialLoading(false)
+    }
+  }
+
+  async function revokeCredential() {
+    if (!credentialFor) return
+    try {
+      await api.credentials.revoke(credentialFor.id)
+      setNotice(`Credential revoked — the lease/credential is dead immediately.`)
+      setCredentialFor(null)
+      load()
+    } catch (e) {
+      setCredentialError(e instanceof Error ? e.message : 'Failed to revoke')
+    }
+  }
+
   useEffect(() => { load() }, [tab]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
@@ -44,6 +79,13 @@ export default function ApprovalList() {
         <h2 className="text-lg font-semibold">Access Requests</h2>
         <p className="text-sm text-muted-foreground">Manage human-in-the-loop approvals</p>
       </div>
+
+      {notice && (
+        <div className="flex items-center justify-between rounded-md border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-800 dark:border-green-900 dark:bg-green-950/30 dark:text-green-300">
+          <span>✓ {notice}</span>
+          <Button variant="ghost" size="sm" onClick={() => setNotice('')}>Dismiss</Button>
+        </div>
+      )}
 
       <div className="flex gap-1 border-b">
         {TABS.map((t) => (
@@ -98,6 +140,11 @@ export default function ApprovalList() {
                         Review
                       </Button>
                     )}
+                    {req.status === 'approved' && (
+                      <Button variant="outline" size="sm" onClick={() => openCredential(req)}>
+                        View credential
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
@@ -110,7 +157,37 @@ export default function ApprovalList() {
         request={actionsFor}
         onClose={() => setActionsFor(null)}
         onSuccess={() => { setActionsFor(null); load() }}
+        onResult={(msg) => setNotice(msg)}
       />
+
+      <Dialog open={!!credentialFor} onOpenChange={(v) => !v && setCredentialFor(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Granted credential</DialogTitle>
+            <DialogDescription>
+              {credentialFor?.secret_name ?? credentialFor?.secret_id.slice(0, 8)} — issued for{" "}
+              {credentialFor?.requested_duration_minutes} minutes.
+            </DialogDescription>
+          </DialogHeader>
+          {credentialLoading ? (
+            <div className="py-4 text-sm text-muted-foreground">Loading…</div>
+          ) : credentialError ? (
+            <p className="text-sm text-destructive">{credentialError}</p>
+          ) : credential ? (
+            <div className="space-y-3">
+              <div className="rounded-md bg-muted p-3 font-mono text-xs break-all">{credential.value}</div>
+              <div className="text-sm text-muted-foreground">
+                Status: {credential.status}
+                {credential.expires_at ? ` · expires ${formatDate(credential.expires_at)}` : ''}
+              </div>
+              <DialogFooter className="gap-2">
+                <Button variant="outline" onClick={() => setCredentialFor(null)}>Close</Button>
+                <Button variant="destructive" onClick={revokeCredential}>Revoke now</Button>
+              </DialogFooter>
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -1,13 +1,22 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Plus, Pencil, Trash2, KeyRound, Shield, ShieldAlert } from 'lucide-react'
+import { Plus, Pencil, Trash2, KeyRound, Shield, ShieldAlert, ClipboardCheck } from 'lucide-react'
 import { ApiError, api } from '@/lib/api-client'
 import { formatDate } from '@/lib/utils'
 import type { Secret } from '@/types/api'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import SecretForm from './secret-form'
 import { SecretPolicyBindingDialog } from './secret-policy-binding-dialog'
 
@@ -22,6 +31,15 @@ export default function SecretList() {
   const [policySecretId, setPolicySecretId] = useState<string | null>(null)
   const [createdSecretForPolicyId, setCreatedSecretForPolicyId] = useState<string | null>(null)
   const [policyBoundBySecretId, setPolicyBoundBySecretId] = useState<Record<string, boolean | null>>({})
+  // AX (dogfood 2026-11-12): the ask-first flow had no human entry point —
+  // request access lives here now.
+  const [accessDialogOpen, setAccessDialogOpen] = useState(false)
+  const [accessSecret, setAccessSecret] = useState<Secret | null>(null)
+  const [accessReason, setAccessReason] = useState('')
+  const [accessDuration, setAccessDuration] = useState(30)
+  const [accessSubmitting, setAccessSubmitting] = useState(false)
+  const [accessResult, setAccessResult] = useState<{ status: string; request_id: string } | null>(null)
+  const [accessError, setAccessError] = useState('')
   const loadSeqRef = useRef(0)
 
   async function loadBindingIndicators(list: Secret[], loadSeq: number) {
@@ -81,6 +99,33 @@ export default function SecretList() {
   function openPolicyDialog(secretId: string) {
     setPolicySecretId(secretId)
     setPolicyDialogOpen(true)
+  }
+
+  function openAccessDialog(s: Secret) {
+    setAccessSecret(s)
+    setAccessReason('')
+    setAccessDuration(30)
+    setAccessResult(null)
+    setAccessError('')
+    setAccessDialogOpen(true)
+  }
+
+  async function handleAccessSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!accessSecret || !accessReason.trim()) return
+    setAccessSubmitting(true)
+    setAccessError('')
+    try {
+      const req = await api.requests.create(accessSecret.id, {
+        reason: accessReason.trim(),
+        duration_minutes: accessDuration,
+      })
+      setAccessResult({ status: req.status ?? 'pending', request_id: req.id })
+    } catch (err) {
+      setAccessError(err instanceof Error ? err.message : 'Failed to create access request')
+    } finally {
+      setAccessSubmitting(false)
+    }
   }
 
   const policySecretName = secrets.find((s) => s.id === policySecretId)?.name
@@ -167,6 +212,9 @@ export default function SecretList() {
                   <TableCell className="text-muted-foreground text-xs">{formatDate(s.created_at)}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="sm" title="Request access (ask-first flow)" onClick={() => openAccessDialog(s)}>
+                        <ClipboardCheck className="w-3.5 h-3.5 mr-1" /> Request access
+                      </Button>
                       <Button variant="ghost" size="icon" title="Edit Secret" onClick={() => { setEditing(s); setFormOpen(true) }}>
                         <Pencil className="w-3.5 h-3.5" />
                       </Button>
@@ -208,6 +256,69 @@ export default function SecretList() {
           load()
         }}
       />
+
+      <Dialog open={accessDialogOpen} onOpenChange={(o) => { if (!o) { setAccessDialogOpen(false); setAccessSecret(null) } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Request access — {accessSecret?.name}</DialogTitle>
+            <DialogDescription>
+              Ask-first: an approver is notified. If no policy binds this secret, the request is auto-approved.
+            </DialogDescription>
+          </DialogHeader>
+          {accessResult ? (
+            <div className="space-y-3 py-2 text-sm">
+              {accessResult.status === 'approved' ? (
+                <p className="text-green-700 dark:text-green-400">
+                  ✓ Auto-approved (no policy bound). Retrieve with <code className="text-xs">valtag get {accessSecret?.name}</code> or an agent request.
+                </p>
+              ) : (
+                <p className="text-amber-700 dark:text-amber-400">
+                  ⏳ Request submitted ({accessResult.request_id.slice(0, 8)}…) — track it on the Approvals page. The approver has been notified.
+                </p>
+              )}
+              <DialogFooter>
+                <Button variant="outline" onClick={() => { setAccessDialogOpen(false); setAccessSecret(null) }}>
+                  Close
+                </Button>
+              </DialogFooter>
+            </div>
+          ) : (
+            <form onSubmit={handleAccessSubmit} className="space-y-3 py-1">
+              <div>
+                <label className="text-sm font-medium">Reason *</label>
+                <Textarea
+                  value={accessReason}
+                  onChange={(e) => setAccessReason(e.target.value)}
+                  placeholder="What is this access for? The approver reads this."
+                  rows={3}
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Duration</label>
+                <select
+                  className="w-full rounded-md border bg-transparent px-3 py-2 text-sm"
+                  value={accessDuration}
+                  onChange={(e) => setAccessDuration(Number(e.target.value))}
+                >
+                  <option value={15}>15 minutes</option>
+                  <option value={30}>30 minutes</option>
+                  <option value={60}>1 hour</option>
+                </select>
+              </div>
+              {accessError && <p className="text-sm text-destructive">{accessError}</p>}
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => { setAccessDialogOpen(false); setAccessSecret(null) }}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={accessSubmitting || !accessReason.trim()}>
+                  {accessSubmitting ? 'Submitting…' : 'Submit request'}
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

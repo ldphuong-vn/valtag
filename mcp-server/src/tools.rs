@@ -10,15 +10,16 @@ pub fn list_tools() -> Vec<ToolDef> {
     vec![
         ToolDef {
             name: "request_secret_access".into(),
-            description: "Ask a human to approve temporary access to a secret (valtag is ask-first: nothing is returned until an approver accepts). Get secret_id from list_my_secrets first. Returns a request_id — poll check_approval_status with it until the status is 'approved', then call get_credential.".into(),
+            description: "Ask a human to approve temporary access to a secret (valtag is ask-first: nothing is returned until an approver accepts). Identify the secret by name (secret_name) or by UUID (secret_id from list_my_secrets). Returns a request_id — poll check_approval_status with it until the status is 'approved', then call get_credential.".into(),
             input_schema: json!({
                 "type": "object",
                 "properties": {
+                    "secret_name": {"type": "string", "description": "Name of the secret (resolved automatically — preferred)"},
                     "secret_id": {"type": "string", "description": "UUID of the secret (from list_my_secrets)"},
                     "reason": {"type": "string", "description": "Why access is needed — the approver reads this; be specific (task, scope, duration)"},
                     "duration_minutes": {"type": "integer", "description": "Requested duration (1-60)", "default": 30}
                 },
-                "required": ["secret_id", "reason"]
+                "required": ["reason"]
             }),
         },
         ToolDef {
@@ -135,12 +136,27 @@ pub async fn call_tool(name: &str, args: &Value, client: &ValtagClient) -> Resul
 }
 
 async fn tool_request_access(args: &Value, client: &ValtagClient) -> Result<Value> {
-    let secret_id = args["secret_id"].as_str()
-        .ok_or_else(|| crate::error::ValtError::Protocol("secret_id required".into()))?;
     let reason = args["reason"].as_str()
         .ok_or_else(|| crate::error::ValtError::Protocol("reason required".into()))?;
     let duration = args.get("duration_minutes").and_then(|v| v.as_u64()).unwrap_or(30) as u32;
-    let result = client.create_access_request(secret_id, reason, duration).await?;
+    // AX: accept secret_name directly (resolved via list) — saves the agent a
+    // separate list_my_secrets round-trip for the common case (dogfood 2026-11-12).
+    let secret_id = match args["secret_id"].as_str() {
+        Some(id) => id.to_string(),
+        None => {
+            let secret_name = args["secret_name"].as_str()
+                .ok_or_else(|| crate::error::ValtError::Protocol("secret_id or secret_name required".into()))?;
+            let result = client.list_secrets().await?;
+            let secrets = result.get("secrets").and_then(|v| v.as_array())
+                .ok_or_else(|| crate::error::ValtError::Protocol("could not list secrets to resolve secret_name".into()))?;
+            secrets.iter()
+                .find(|s| s.get("name").and_then(|n| n.as_str()) == Some(secret_name))
+                .and_then(|s| s.get("id").and_then(|i| i.as_str()))
+                .map(|s| s.to_string())
+                .ok_or_else(|| crate::error::ValtError::Protocol(format!("secret not found: {secret_name}")))?
+        }
+    };
+    let result = client.create_access_request(&secret_id, reason, duration).await?;
     Ok(json!({
         "request_id": result.get("id"),
         "status": result.get("status"),

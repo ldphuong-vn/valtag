@@ -23,7 +23,9 @@ interface Props {
 export default function SecretForm({ open, secret, projectId, onClose, onSuccess, onCreated }: Props) {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
-  const [credentialType, setCredentialType] = useState('')
+  // AX: default to the most common type — an empty select forced every user
+  // through a required-field error on submit (dogfood 2026-11-12).
+  const [credentialType, setCredentialType] = useState('api_key')
   const [source, setSource] = useState('')
   const [value, setValue] = useState('')
   const [loading, setLoading] = useState(false)
@@ -37,7 +39,7 @@ export default function SecretForm({ open, secret, projectId, onClose, onSuccess
       setSource(secret.source ?? '')
       setValue('')
     } else {
-      setName(''); setDescription(''); setCredentialType(''); setSource(''); setValue('')
+      setName(''); setDescription(''); setCredentialType('api_key'); setSource(''); setValue('')
     }
     setError('')
   }, [secret, open])

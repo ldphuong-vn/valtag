@@ -118,3 +118,23 @@ A complete, runnable integration (before/after, fail-closed test) lives in
 - the gateway is the **only** client that should reach `:10256`
 - key-auth (or any static credential plugin) stays **off** on routes guarded by
   valtag — the derived key replaces it
+
+### Serving the dashboard and the API on one domain (edge = AI gateway)
+
+When the edge proxy in front of valtag is the AI gateway itself (like the
+staging deployment: `https://valt.turbo.ai.vn`), the dashboard's **Next.js route
+handlers** must reach the dashboard, not the API server — otherwise login and
+every dashboard page break with 404s (found in dogfood 2026-11-12):
+
+| Path prefix | Route to | Why |
+|---|---|---|
+| `/api/auth/*` | **dashboard** | `set-tokens` / `refresh` / `logout` are Next.js route handlers that manage auth cookies |
+| `/api/proxy/*` | **dashboard** | the dashboard's BFF proxy reads the auth cookie and forwards to the API with the token — every dashboard page loads data through it |
+| `/api/*` (rest) | **valtag server** | the actual API |
+| `/` | **dashboard** | |
+
+Longest-prefix matching wins, so listing `/api/auth` and `/api/proxy` before
+`/api` is enough. Also remember: secrets are **project-scoped** — the create
+endpoint rejects `project_id`-less payloads, and the dashboard binds the
+current project from its workspace context (which self-heals in the sidebar on
+returning logins).
