@@ -78,6 +78,16 @@ func (h *Handler) CreateSecret(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Secrets are project-scoped: agents (and the policy engine) only ever see
+	// secrets bound to their project. A secret without a project is invisible
+	// to exactly the callers the product exists for — require it (dogfood
+	// 2026-11-12: form and seed both created project-less secrets that agents
+	// could not discover).
+	if req.ProjectID == "" {
+		apierror.BadRequest(w, "project_id is required: secrets are project-scoped so agents can discover them")
+		return
+	}
+
 	if req.CredentialType != "" && !validCredentialTypes[req.CredentialType] {
 		apierror.BadRequest(w, "invalid credential_type")
 		return

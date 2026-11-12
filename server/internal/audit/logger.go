@@ -215,6 +215,12 @@ func ExtractIP(r *http.Request) string {
 // client-controlled).
 func ExtractIPTrusted(r *http.Request, trustXFF bool) string {
 	if trustXFF {
+		// Cloudflare-fronted deployments: CF-Connecting-IP carries the real
+		// client address (set by the CF edge). The last XFF entry behind
+		// CF+envoy is the CF edge itself, not the client.
+		if cfc := r.Header.Get("Cf-Connecting-Ip"); cfc != "" {
+			return strings.TrimSpace(cfc)
+		}
 		if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
 			entries := strings.Split(xff, ",")
 			return strings.TrimSpace(entries[len(entries)-1])
