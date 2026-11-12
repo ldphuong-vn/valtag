@@ -45,7 +45,11 @@ export default function PolicyTemplatesPage({ projectId, currentUserId }: Props)
         api.projects.getMembers(projectId),
       ])
       setTemplates(tplRes.templates ?? [])
-      const me = (membersRes.members ?? []).find((m: ProjectMembership) => m.user_id === currentUserId)
+      // server ListMembers returns a bare array; tolerate the {members} wrapper too
+      const memberList: ProjectMembership[] = Array.isArray(membersRes)
+        ? membersRes
+        : (membersRes.members ?? [])
+      const me = memberList.find((m: ProjectMembership) => m.user_id === currentUserId)
       setRole(me?.role ?? 'viewer')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load policies')
