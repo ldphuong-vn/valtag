@@ -234,6 +234,14 @@ func (s *Service) GetLeaseProviderID(ctx context.Context, leaseID string) (strin
 	return providerID, err
 }
 
+// GetLeaseAgentID returns the agent_id a lease was minted for (nil when the
+// lease was minted by a user). Used for agent ownership checks on revoke.
+func (s *Service) GetLeaseAgentID(ctx context.Context, leaseID string) (*string, error) {
+	var agentID *string
+	err := s.db.QueryRow(ctx, `SELECT agent_id FROM dynamic_leases WHERE id = $1`, leaseID).Scan(&agentID)
+	return agentID, err
+}
+
 // ValidateDerivedKey resolves a presented derived API key to its active lease.
 // Returns nil when the key is unknown, revoked, expired, or its provider was
 // disabled — callers must treat a nil lease as "access denied".

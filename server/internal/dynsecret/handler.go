@@ -40,12 +40,16 @@ func (h *Handler) RegisterRoutes(r chi.Router) {
 	h.registerRoutes(r)
 }
 
-// RegisterLeaseRoute registers POST /providers/{provider_id}/leases on the
-// dual-auth group (user JWT or agent token) — the MCP request_dynamic_secret
-// tool calls it with an agent token and got a 401 on the JWT-only group
-// (report §3.3 #4). CreateLease itself enforces the agent/user authz split.
+// RegisterLeaseRoute registers lease routes on the dual-auth group (user JWT
+// or agent token) — the MCP request_dynamic_secret tool calls it with an agent
+// token and got a 401 on the JWT-only group (report §3.3 #4). CreateLease and
+// RevokeLease enforce the agent/user authz split themselves. DELETE lives here
+// too: agents revoke their own leases (the MCP revoke_credential tool — an
+// agent-owned lease was previously unrecoverable by its owner, dogfood
+// 2026-11-12).
 func (h *Handler) RegisterLeaseRoute(r chi.Router) {
 	r.Post("/providers/{provider_id}/leases", h.CreateLease)
+	r.Delete("/leases/{lease_id}", h.RevokeLease)
 }
 
 func (h *Handler) registerRoutes(r chi.Router) {
@@ -54,7 +58,6 @@ func (h *Handler) registerRoutes(r chi.Router) {
 	r.With(rbac.Middleware(h.db, "project_id", rbac.ResourceDynSecret, rbac.ActionRead)).
 		Get("/projects/{project_id}/providers", h.ListProviders)
 	r.Get("/providers/{provider_id}/leases", h.ListLeases)
-	r.Delete("/leases/{lease_id}", h.RevokeLease)
 }
 
 type createProviderRequest struct {
@@ -196,14 +199,30 @@ func (h *Handler) ListLeases(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) RevokeLease(w http.ResponseWriter, r *http.Request) {
 	leaseID := chi.URLParam(r, "lease_id")
+	agentID := agent.AgentIDFromContext(r.Context())
 	userID := auth.UserIDFromContext(r.Context())
-	providerID, err := h.service.GetLeaseProviderID(r.Context(), leaseID)
-	if err != nil {
-		apierror.NotFound(w, "lease not found")
-		return
-	}
-	if !h.checkProviderAccess(r.Context(), w, providerID, userID, rbac.ActionWrite) {
-		return
+
+	if agentID != "" {
+		// Agent path: an agent revokes only a lease minted for itself — never
+		// another agent's or a user's lease.
+		ownerAgentID, err := h.service.GetLeaseAgentID(r.Context(), leaseID)
+		if err != nil {
+			apierror.NotFound(w, "lease not found")
+			return
+		}
+		if ownerAgentID == nil || *ownerAgentID != agentID {
+			apierror.Forbidden(w, "lease belongs to a different agent")
+			return
+		}
+	} else {
+		providerID, err := h.service.GetLeaseProviderID(r.Context(), leaseID)
+		if err != nil {
+			apierror.NotFound(w, "lease not found")
+			return
+		}
+		if !h.checkProviderAccess(r.Context(), w, providerID, userID, rbac.ActionWrite) {
+			return
+		}
 	}
 
 	if err := h.service.RevokeLease(r.Context(), leaseID); err != nil {
