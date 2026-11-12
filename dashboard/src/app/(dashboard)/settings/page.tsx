@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/auth'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import ProfileCard from './profile-card'
+import ChangePasswordCard from './change-password-card'
 import SignOutButton from './sign-out-button'
 
 export default async function SettingsPage() {
@@ -16,6 +17,8 @@ export default async function SettingsPage() {
       <h2 className="text-lg font-semibold">Settings</h2>
 
       <ProfileCard fallbackId={session.id} />
+
+      <ChangePasswordCard />
 
       <Card>
         <CardHeader><CardTitle className="text-base">Account</CardTitle></CardHeader>

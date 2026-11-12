@@ -16,7 +16,7 @@ export default function ProfileCard({ fallbackId }: { fallbackId: string }) {
   const [failed, setFailed] = useState(false)
 
   useEffect(() => {
-    fetch('/api/proxy/me', { credentials: 'include' })
+    fetch('/api/proxy/auth/me', { credentials: 'include' })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
       .then(setMe)
       .catch(() => setFailed(true))
