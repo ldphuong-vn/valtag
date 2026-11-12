@@ -112,6 +112,7 @@ func (h *Handler) Routes() chi.Router {
 	r.Group(func(r chi.Router) {
 		r.Use(AuthMiddleware(h.pool, h.jwtMgr))
 		r.Post("/resend-verification", h.resendVerification)
+		r.Post("/change-password", h.changePassword)
 		r.Get("/me", h.getMe)
 	})
 	return r
@@ -451,4 +452,72 @@ func hashRefreshToken(token string) string {
 func isDuplicateKeyError(err error) bool {
 	var pgErr *pgconn.PgError
 	return errors.As(err, &pgErr) && pgErr.Code == "23505"
+}
+
+type changePasswordRequest struct {
+	CurrentPassword string `json:"current_password"`
+	NewPassword     string `json:"new_password"`
+}
+
+// changePassword handles POST /auth/change-password (Bearer required): verify
+// the current password, then re-hash. Google-only accounts (no password set)
+// are rejected — they have nothing to verify against. Existing sessions die
+// with the 15-minute access-token TTL.
+func (h *Handler) changePassword(w http.ResponseWriter, r *http.Request) {
+	userID := UserIDFromContext(r.Context())
+	if userID == "" {
+		apierror.Unauthorized(w, "authentication required")
+		return
+	}
+
+	var req changePasswordRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		apierror.BadRequest(w, "invalid request body")
+		return
+	}
+
+	var passwordHash *string
+	err := h.pool.QueryRow(r.Context(),
+		`SELECT password_hash FROM users WHERE id = $1`, userID,
+	).Scan(&passwordHash)
+	if err != nil {
+		apierror.InternalError(w, "failed to load user")
+		return
+	}
+	if passwordHash == nil || *passwordHash == "" {
+		apierror.BadRequest(w, "this account uses Google sign-in and has no password to change")
+		return
+	}
+
+	match, err := VerifyPassword(req.CurrentPassword, *passwordHash)
+	if err != nil || !match {
+		apierror.BadRequest(w, "current password is incorrect")
+		return
+	}
+
+	if err := validator.ValidatePassword(req.NewPassword); err != nil {
+		apierror.BadRequest(w, err.Error())
+		return
+	}
+
+	newHash, err := HashPassword(req.NewPassword)
+	if err != nil {
+		log.Printf("auth: hash new password: %v", err)
+		apierror.InternalError(w, "failed to update password")
+		return
+	}
+
+	if _, err := h.pool.Exec(r.Context(),
+		`UPDATE users SET password_hash = $1 WHERE id = $2`, newHash, userID,
+	); err != nil {
+		log.Printf("auth: update password: %v", err)
+		apierror.InternalError(w, "failed to update password")
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{ //nolint:errcheck
+		"message": "password updated",
+		"note":    "other sessions expire within 15 minutes",
+	})
 }

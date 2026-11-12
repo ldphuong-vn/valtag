@@ -354,24 +354,6 @@ func main() {
 			r.Get("/me/notification-channels", channelHandler.List)
 			r.Post("/me/notification-channels", channelHandler.Upsert)
 			r.Delete("/me/notification-channels/{id}", channelHandler.Delete)
-			// Profile for the dashboard settings page: JWT carries only `sub`,
-			// so email/role come from the database (AX dogfood 2026-11-12 —
-			// the settings page previously guessed "google account").
-			r.Get("/me", func(w http.ResponseWriter, r *http.Request) {
-				userID := auth.UserIDFromContext(r.Context())
-				var email, role string
-				err := pool.QueryRow(r.Context(),
-					`SELECT email, role FROM users WHERE id = $1`, userID,
-				).Scan(&email, &role)
-				if err != nil {
-					apierror.NotFound(w, "user not found")
-					return
-				}
-				w.Header().Set("Content-Type", "application/json")
-				json.NewEncoder(w).Encode(map[string]string{ //nolint:errcheck
-					"id": userID, "email": email, "role": role,
-				})
-			})
 			r.Post("/me/telegram-link", func(w http.ResponseWriter, r *http.Request) {
 				userID := auth.UserIDFromContext(r.Context())
 				url, err := telegramWebhookHandler.GenerateLinkURL(r.Context(), userID)
