@@ -51,6 +51,29 @@ async function tryRefreshTokens(refreshToken: string): Promise<{
   }
 }
 
+// Single-flight refresh, keyed by the refresh token string. The backend
+// rotates refresh tokens (old one deleted on use), so when a page fires
+// several parallel requests past the access-token TTL, each would otherwise
+// call refresh with the SAME stale token — the first rotates it, the rest
+// 401 "invalid refresh token", and the dashboard kicks the user to /login
+// mid-page-load (dogfood 2026-11-12). Joining the in-flight promise gives
+// every parallel caller the rotated pair. The completed promise stays in the
+// map for a grace window so callers that land just after rotation still
+// receive the new tokens.
+const refreshFlights = new Map<string, Promise<{ access_token: string; refresh_token: string } | null>>()
+
+function refreshSingleFlight(refreshToken: string) {
+  const existing = refreshFlights.get(refreshToken)
+  if (existing) return existing
+  const flight = tryRefreshTokens(refreshToken).finally(() => {
+    setTimeout(() => {
+      if (refreshFlights.get(refreshToken) === flight) refreshFlights.delete(refreshToken)
+    }, 3000)
+  })
+  refreshFlights.set(refreshToken, flight)
+  return flight
+}
+
 // Set auth cookies on a NextResponse.
 function setAuthCookies(
   res: NextResponse,
@@ -103,12 +126,12 @@ async function proxyRequest(req: NextRequest, params: { path: string[] }) {
     }
   }
 
-  // Access token missing or expired — attempt silent refresh.
+  // Access token missing or expired — attempt silent refresh (single-flight).
   if (!refreshToken) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const newTokens = await tryRefreshTokens(refreshToken)
+  const newTokens = await refreshSingleFlight(refreshToken)
   if (!newTokens) {
     // Refresh failed — clear cookies and signal client to re-login.
     const errRes = NextResponse.json({ error: 'Session expired' }, { status: 401 })
