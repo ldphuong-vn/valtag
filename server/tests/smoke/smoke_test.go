@@ -120,11 +120,37 @@ func TestSmoke(t *testing.T) {
 	})
 
 	var secretID string
-	t.Run("04 create a secret with an auto-approve policy", func(t *testing.T) {
+	var projectID string
+	t.Run("04 create org, workspace and project", func(t *testing.T) {
+		resp := client.call(t, http.MethodPost, "/api/v1/orgs", map[string]string{
+			"name": "Smoke Org", "slug": fmt.Sprintf("smoke-%d", time.Now().UnixNano()),
+		}, http.StatusCreated)
+		orgID := str(resp, "id")
+		if orgID == "" {
+			t.Fatal("org create returned no id")
+		}
+		resp = client.call(t, http.MethodPost, "/api/v1/orgs/"+orgID+"/workspaces", map[string]string{
+			"name": "Smoke WS", "slug": "smoke-ws",
+		}, http.StatusCreated)
+		workspaceID := str(resp, "id")
+		if workspaceID == "" {
+			t.Fatal("workspace create returned no id")
+		}
+		resp = client.call(t, http.MethodPost, "/api/v1/workspaces/"+workspaceID+"/projects", map[string]string{
+			"name": "Smoke Project", "slug": "smoke-project",
+		}, http.StatusCreated)
+		projectID = str(resp, "id")
+		if projectID == "" {
+			t.Fatal("project create returned no id")
+		}
+	})
+
+	t.Run("05 create a secret with an auto-approve policy", func(t *testing.T) {
 		resp := client.call(t, http.MethodPost, "/api/v1/secrets", map[string]string{
 			"name":            "smoke-credential",
 			"credential_type": "api_key",
 			"value":           "sk-smoke-1234567890",
+			"project_id":      projectID,
 			"policy":          `{"allow_auto_approve":true,"require_approval":false,"require_reason":false,"max_duration":"1h"}`,
 		}, http.StatusCreated)
 		secretID = str(resp, "id")
@@ -134,7 +160,7 @@ func TestSmoke(t *testing.T) {
 	})
 
 	var requestID string
-	t.Run("05 request access is auto-approved", func(t *testing.T) {
+	t.Run("06 request access is auto-approved", func(t *testing.T) {
 		resp := client.call(t, http.MethodPost, "/api/v1/secrets/"+secretID+"/access-requests", map[string]interface{}{
 			"reason":           "smoke: end-to-end ask-first flow",
 			"duration_minutes": 30,
@@ -148,14 +174,14 @@ func TestSmoke(t *testing.T) {
 		}
 	})
 
-	t.Run("06 credential is delivered for the approved request", func(t *testing.T) {
+	t.Run("07 credential is delivered for the approved request", func(t *testing.T) {
 		resp := client.call(t, http.MethodGet, "/api/v1/credentials/"+requestID, nil, http.StatusOK)
 		if got := str(resp, "value"); got != "sk-smoke-1234567890" {
 			t.Fatalf("delivered credential = %q, want the secret plaintext", got)
 		}
 	})
 
-	t.Run("07 own audit trail is readable", func(t *testing.T) {
+	t.Run("08 own audit trail is readable", func(t *testing.T) {
 		resp := client.call(t, http.MethodGet, "/api/v1/audit/logs", nil, http.StatusOK)
 		logs, ok := resp["logs"].([]interface{})
 		if !ok || len(logs) == 0 {
