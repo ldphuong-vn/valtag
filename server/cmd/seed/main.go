@@ -43,8 +43,8 @@ func main() {
 	var adminID, devID string
 	err = tx.QueryRow(ctx,
 		`WITH ins AS (
-			INSERT INTO users (email, password_hash, region_code, status, email_verified)
-			VALUES ($1, $2, $3, $4, true)
+			INSERT INTO users (email, password_hash, region_code, status, email_verified, role)
+			VALUES ($1, $2, $3, $4, true, 'admin')
 			ON CONFLICT (email) DO NOTHING
 			RETURNING id
 		)
