@@ -60,7 +60,7 @@ async function tryRefreshTokens(refreshToken: string): Promise<{
 // every parallel caller the rotated pair. The completed promise stays in the
 // map for a grace window so callers that land just after rotation still
 // receive the new tokens.
-const refreshFlights = new Map<string, Promise<{ access_token: string; refresh_token: string } | null>>()
+const refreshFlights = new Map<string, Promise<{ access_token: string; refresh_token: string; expires_in: number } | null>>()
 
 function refreshSingleFlight(refreshToken: string) {
   const existing = refreshFlights.get(refreshToken)
