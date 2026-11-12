@@ -41,33 +41,43 @@ export default function Sidebar() {
     // cleared site data) otherwise sees "No workspace selected" forever —
     // re-derive the context from their first org/workspace/project.
     async function ensureContext() {
-      if (localStorage.getItem('valt_current_workspace')) return
+      const wsId = localStorage.getItem('valt_current_workspace')
+      const hasProject = !!localStorage.getItem('valt_current_project')
+      if (wsId && hasProject) return
       try {
-        const orgsRes = await fetch('/api/proxy/orgs', { credentials: 'include' })
-        const orgsData = await orgsRes.json()
-        const orgs = Array.isArray(orgsData) ? orgsData : (orgsData.orgs ?? [])
-        const org = orgs[0]
-        if (!org) return
-        const wsRes = await fetch(`/api/proxy/orgs/${org.id}/workspaces`, { credentials: 'include' })
-        const wsData = await wsRes.json()
-        const workspaces = Array.isArray(wsData) ? wsData : (wsData.workspaces ?? [])
-        const ws = workspaces[0]
-        if (!ws) return
-        localStorage.setItem('valt_current_org', org.id)
-        localStorage.setItem('valt_current_workspace', ws.id)
-        localStorage.setItem('valt_current_workspace_name', ws.name ?? 'Workspace')
-        let projectId: string | null = null
-        const projRes = await fetch(`/api/proxy/workspaces/${ws.id}/projects`, { credentials: 'include' })
-        const projData = await projRes.json()
-        const projects = Array.isArray(projData) ? projData : (projData.projects ?? [])
-        if (projects[0]?.id) {
-          projectId = projects[0].id
-          localStorage.setItem('valt_current_project', projectId as string)
+        let orgId = localStorage.getItem('valt_current_org')
+        let workspaceId = wsId
+        let workspaceName = localStorage.getItem('valt_current_workspace_name')
+        if (!orgId) {
+          const orgsRes = await fetch('/api/proxy/orgs', { credentials: 'include' })
+          const orgsData = await orgsRes.json()
+          const orgs = Array.isArray(orgsData) ? orgsData : (orgsData.orgs ?? [])
+          orgId = orgs[0]?.id ?? null
+          if (!orgId) return
+          localStorage.setItem('valt_current_org', orgId)
         }
-        if (!projectId) return
+        if (!workspaceId) {
+          const wsRes = await fetch(`/api/proxy/orgs/${orgId}/workspaces`, { credentials: 'include' })
+          const wsData = await wsRes.json()
+          const workspaces = Array.isArray(wsData) ? wsData : (wsData.workspaces ?? [])
+          const ws = workspaces[0]
+          if (!ws) return
+          workspaceId = ws.id as string
+          workspaceName = ws.name ?? 'Workspace'
+          localStorage.setItem('valt_current_workspace', workspaceId)
+          localStorage.setItem('valt_current_workspace_name', workspaceName ?? 'Workspace')
+        }
+        if (!hasProject) {
+          const projRes = await fetch(`/api/proxy/workspaces/${workspaceId}/projects`, { credentials: 'include' })
+          const projData = await projRes.json()
+          const projects = Array.isArray(projData) ? projData : (projData.projects ?? [])
+          if (projects[0]?.id) {
+            localStorage.setItem('valt_current_project', projects[0].id as string)
+          }
+        }
         updateHref()
         window.dispatchEvent(new Event('valtag:workspace-changed'))
-        if (projectId) window.dispatchEvent(new Event('valtag:project-changed'))
+        window.dispatchEvent(new Event('valtag:project-changed'))
       } catch {
         // stay on the "No workspace selected" state — user can pick via /orgs
       }
