@@ -9,11 +9,11 @@ import { cn } from '@/lib/utils'
 const navItems = [
   { href: '/secrets', label: 'Secrets', icon: KeyRound },
   { href: '/approvals', label: 'Approvals', icon: ClipboardCheck },
-  { href: '/audit', label: 'Audit', icon: ScrollText },
   { href: '/agents', label: 'Agents', icon: Bot },
-  { href: '/scans', label: 'Scanner', icon: ScanLine },
   { href: '/providers', label: 'Providers', icon: Database },
+  { href: '/audit', label: 'Audit', icon: ScrollText },
   { href: '/projects', label: 'Projects', icon: FolderOpen },
+  { href: '/scans', label: 'Scanner', icon: ScanLine },
   { href: '/settings', label: 'Settings', icon: Settings },
 ]
 

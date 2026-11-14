@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { api, ApiError } from '@/lib/api-client'
-import { Shield, Users, Building2, KeyRound, Activity, UserPlus, CreditCard } from 'lucide-react'
+import { Shield, Users, Building2, KeyRound, Activity, UserPlus } from 'lucide-react'
 
 // ---------------------------------------------------------------------------
 // Types (inferred from api-client shapes)
@@ -10,7 +10,6 @@ import { Shield, Users, Building2, KeyRound, Activity, UserPlus, CreditCard } fr
 type Stats = Awaited<ReturnType<typeof api.admin.stats>>
 type UserRow = Awaited<ReturnType<typeof api.admin.users>>['users'][number]
 type OrgRow = Awaited<ReturnType<typeof api.admin.orgs>>['orgs'][number]
-type PaymentRow = Awaited<ReturnType<typeof api.admin.payments>>['payments'][number]
 
 // ---------------------------------------------------------------------------
 // Small reusable stat card
@@ -132,7 +131,6 @@ export default function AdminPage() {
   const [stats, setStats] = useState<Stats | null>(null)
   const [users, setUsers] = useState<UserRow[]>([])
   const [orgs, setOrgs] = useState<OrgRow[]>([])
-  const [payments, setPayments] = useState<PaymentRow[]>([])
   const [loading, setLoading] = useState(true)
   const [forbidden, setForbidden] = useState(false)
   const [search, setSearch] = useState('')
@@ -142,17 +140,15 @@ export default function AdminPage() {
     let cancelled = false
     async function load() {
       try {
-        const [s, u, o, p] = await Promise.all([
+        const [s, u, o] = await Promise.all([
           api.admin.stats(),
           api.admin.users({ search: search || undefined }),
           api.admin.orgs(),
-          api.admin.payments(),
         ])
         if (cancelled) return
         setStats(s)
         setUsers(u.users)
         setOrgs(o.orgs)
-        setPayments(p.payments)
       } catch (err) {
         if (cancelled) return
         if (err instanceof ApiError && err.status === 403) {
@@ -334,39 +330,6 @@ export default function AdminPage() {
         </div>
       </section>
 
-      {/* Payments section */}
-      <section>
-        <div className="flex items-center gap-2 mb-3">
-          <CreditCard className="w-4 h-4 text-muted-foreground" />
-          <h2 className="text-base font-semibold">Stripe Subscriptions</h2>
-        </div>
-        {payments.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No orgs with Stripe subscriptions.</p>
-        ) : (
-          <div className="rounded-lg border overflow-hidden">
-            <table className="w-full text-sm">
-              <TableHead cols={['Org', 'Plan', 'Seats', 'Customer ID', 'Subscription ID']} />
-              <tbody>
-                {payments.map((p) => (
-                  <tr key={p.org_id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
-                    <td className="px-3 py-2.5 font-medium">{p.org_name}</td>
-                    <td className="px-3 py-2.5">
-                      <Badge label={p.plan} variant={planVariant(p.plan)} />
-                    </td>
-                    <td className="px-3 py-2.5">{p.plan_seats}</td>
-                    <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">
-                      {p.stripe_customer_id || '—'}
-                    </td>
-                    <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">
-                      {p.stripe_subscription_id || '—'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
     </div>
   )
 }
