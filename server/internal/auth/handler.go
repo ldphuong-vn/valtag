@@ -508,11 +508,21 @@ func (h *Handler) changePassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if _, err := h.pool.Exec(r.Context(),
-		`UPDATE users SET password_hash = $1 WHERE id = $2`, newHash, userID,
+		`UPDATE users SET password_hash = $1, token_version = token_version + 1 WHERE id = $2`, newHash, userID,
 	); err != nil {
 		log.Printf("auth: update password: %v", err)
 		apierror.InternalError(w, "failed to update password")
 		return
+	}
+
+	// Revoke all sessions immediately: web refresh tokens die here (the
+	// dashboard's silent refresh fails on next call), CLI tokens die via the
+	// token_version bump. Access JWTs lack the ver claim and live out their
+	// ≤15-minute TTL — documented behaviour.
+	if _, err := h.pool.Exec(r.Context(),
+		`DELETE FROM refresh_tokens WHERE user_id = $1`, userID,
+	); err != nil {
+		log.Printf("auth: revoke refresh tokens after password change: %v", err)
 	}
 
 	w.Header().Set("Content-Type", "application/json")

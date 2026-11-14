@@ -1,14 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
 export default function ChangePasswordCard() {
-  const router = useRouter()
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -39,8 +37,13 @@ export default function ChangePasswordCard() {
         return
       }
       setDone(true)
-      // Other sessions die within 15 minutes; this one stays alive.
-      setTimeout(() => router.refresh(), 1500)
+      // Password change revokes all sessions server-side (refresh tokens
+      // deleted + token_version bumped). Sign this session out immediately —
+      // matching the Higress console behaviour the operator expects.
+      setTimeout(async () => {
+        await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
+        window.location.href = '/login'
+      }, 1200)
     } finally {
       setLoading(false)
     }
@@ -53,7 +56,7 @@ export default function ChangePasswordCard() {
         {done ? (
           <div className="space-y-2 text-sm">
             <p className="text-green-700 dark:text-green-400">✓ Password updated.</p>
-            <p className="text-muted-foreground">Other sessions expire within 15 minutes.</p>
+            <p className="text-muted-foreground">All sessions have been signed out. Sign in with your new password.</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-3">
