@@ -1,9 +1,12 @@
+// Must match the server's validCredentialTypes (server/internal/vault/handler.go).
+// tls_cert was removed: the server never accepted it (dogfood 2026-11-13).
 export const CREDENTIAL_TYPES = [
   { value: 'api_key', label: 'API Key' },
   { value: 'oauth_token', label: 'OAuth Token' },
   { value: 'db_credential', label: 'Database Credential' },
   { value: 'ssh_key', label: 'SSH Key' },
-  { value: 'tls_cert', label: 'TLS Certificate' },
+  { value: 'cloud_credential', label: 'Cloud Credential' },
+  { value: 'personal_session', label: 'Personal Session' },
 ] as const
 
 export const REQUEST_STATUSES = {

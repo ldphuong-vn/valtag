@@ -39,6 +39,8 @@ export default function SecretList() {
   const [accessDuration, setAccessDuration] = useState(30)
   const [accessSubmitting, setAccessSubmitting] = useState(false)
   const [accessResult, setAccessResult] = useState<{ status: string; request_id: string } | null>(null)
+  const [credentialValue, setCredentialValue] = useState('')
+  const [copied, setCopied] = useState(false)
   const [accessError, setAccessError] = useState('')
   const loadSeqRef = useRef(0)
 
@@ -106,6 +108,7 @@ export default function SecretList() {
     setAccessReason('')
     setAccessDuration(30)
     setAccessResult(null)
+    setCredentialValue('')
     setAccessError('')
     setAccessDialogOpen(true)
   }
@@ -120,11 +123,28 @@ export default function SecretList() {
         reason: accessReason.trim(),
         duration_minutes: accessDuration,
       })
-      setAccessResult({ status: req.status ?? 'pending', request_id: req.id })
+      const status = (req.status ?? 'pending') as string
+      setAccessResult({ status, request_id: req.id })
+      // Auto-approved → fetch the value right away so the dialog doubles as
+      // "reveal + copy" for human-held credentials (dogfood 2026-11-13).
+      if (status === 'approved') {
+        const cred = await api.credentials.get(req.id)
+        setCredentialValue(cred.value ?? '')
+      }
     } catch (err) {
       setAccessError(err instanceof Error ? err.message : 'Failed to create access request')
     } finally {
       setAccessSubmitting(false)
+    }
+  }
+
+  async function copyValue(text: string) {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    } catch {
+      // clipboard denied — the value stays selectable in the dialog anyway
     }
   }
 
@@ -268,9 +288,17 @@ export default function SecretList() {
           {accessResult ? (
             <div className="space-y-3 py-2 text-sm">
               {accessResult.status === 'approved' ? (
-                <p className="text-green-700 dark:text-green-400">
-                  ✓ Auto-approved (no policy bound). Retrieve with <code className="text-xs">valtag get {accessSecret?.name}</code> or an agent request.
-                </p>
+                credentialValue ? (
+                  <>
+                    <p className="text-green-700 dark:text-green-400">✓ Approved — credential below. It expires with the lease; re-request anytime.</p>
+                    <div className="rounded-md bg-muted p-3 font-mono text-xs whitespace-pre-wrap break-all">{credentialValue}</div>
+                    <Button size="sm" variant="outline" onClick={() => copyValue(credentialValue)}>
+                      {copied ? '✓ Copied' : 'Copy all'}
+                    </Button>
+                  </>
+                ) : (
+                  <p className="text-green-700 dark:text-green-400">✓ Approved. Retrieve with <code className="text-xs">valtag get {accessSecret?.name}</code> or an agent request.</p>
+                )
               ) : (
                 <p className="text-amber-700 dark:text-amber-400">
                   ⏳ Request submitted ({accessResult.request_id.slice(0, 8)}…) — track it on the Approvals page. The approver has been notified.
