@@ -1,6 +1,8 @@
 # valtag — the ask-first credential gate for AI agents
 
 [![CI/CD](https://github.com/ldphuong-vn/valtag/actions/workflows/ci.yml/badge.svg)](https://github.com/ldphuong-vn/valtag/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/ldphuong-vn/valtag?label=release)](https://github.com/ldphuong-vn/valtag/releases)
+[![MCP server](https://img.shields.io/github/v/release/ldphuong-vn/valtag/mcp%2Fv0.1.1?label=MCP)](https://github.com/ldphuong-vn/valtag/releases)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 Your AI agent needs an API key. Today you paste a long-lived production key into its config — and it stays there, forever, on every machine the agent runs on, with no record of what the agent did with it.
@@ -15,6 +17,11 @@ Agent ──"I need this key for 30 min"──▶ valtag ──▶ Human approve
 ```
 
 **No new harness required.** valtag is not an agent platform — you don't move your agents into a sandbox or a runner. Keep Claude Code, Cursor, ZCode, your CI scripts and cron jobs exactly where they are. Attach one MCP server + one URL, and every credential they touch goes through the gate.
+
+<div align="center">
+  <img src="docs/images/demo-60s.gif" alt="60-second demo: request → approve → gated gateway call → revoke → 401" width="88%">
+  <p><b>60 seconds:</b> request → approve → gated gateway call → revoke → dead key</p>
+</div>
 
 ## Who is it for
 
@@ -46,7 +53,30 @@ Cursor ──MCP/stdio──▶ valtag-mcp-server ──HTTPS──▶ valtag se
                         └─ 3. get_credential ────────────────┘  audit: who/what/when/where/why/how
 ```
 
-One server, three ways to consume credentials:
+## Works with your gateway — today, config-only
+
+The gateway listener speaks a simple HTTP authorize contract that matches the
+native forward-auth mechanism of the biggest installed bases — integrate with
+config, not code:
+
+| Gateway | Mechanism | Status |
+|---|---|---|
+| Higress | ext-auth plugin | ✅ running live on a staging deployment |
+| nginx | `auth_request` | ✅ container-tested |
+| Caddy | `forward_auth` | ✅ container-tested |
+| Traefik | `forwardAuth` | ✅ container-tested |
+| Envoy / Istio ecosystems | `ext_authz` HTTP filter | ✅ same contract as Higress |
+| Apache APISIX | `forward-auth` | ✅ config mapped |
+| LiteLLM | custom auth callback | ✅ live-tested — LiteLLM's own master key does not bypass the gate |
+
+Full configs, verification steps and the fail-closed semantics:
+[docs/integrations/](docs/integrations/README.md). The gate replaces static
+credentials at the edge — and because the authorize contract only reads
+headers, valtag **never needs a plugin inside your gateway to gate it**.
+
+## Three ways to consume credentials
+
+One server, three surfaces — pick per workload:
 
 1. **MCP tools** (agents): `request_access` → human approves → `get_credential`. Works with any MCP client — Claude Code, Claude Desktop, Cursor, ZCode.
 2. **CLI injection** (humans & scripts): `valtag run -- ./deploy.sh` runs your command with approved secrets injected as environment variables.
@@ -119,7 +149,7 @@ Shipped (integration tests run against a real Postgres when `DATABASE_URL` is pr
 - **Audit 4W1H** — every event with IP/user-agent context, SHA-256 hash chain (covers all fields, survives restarts, concurrency-safe), `GET /audit/verify` with `?expected_head=` off-site anchoring, CSV export with formula-injection guard
 - **Secret scanning** — local regex scans for leaked credentials via the MCP `scan_secrets` tool, findings persisted server-side
 
-On the roadmap toward v1.0: hardening sweep before the first tagged release (authz audit, key rotation, prod TLS topology — see `docs/positioning.md`), cloud STS lease providers, SSH certificate issuance, signed multi-platform releases (CLI pipeline ships 3 platforms; MCP server pipeline ships 6 targets).
+On the roadmap: cloud STS lease providers, SSH certificate issuance, signed multi-platform releases (the CLI pipeline ships 3 platforms; the MCP server pipeline ships 6 targets), and an OAuth-based provider type for upstream credentials — see [docs/positioning.md](docs/positioning.md).
 
 ## Security model, honestly
 
@@ -135,12 +165,16 @@ See [docs/security-model.md](docs/security-model.md) for details.
 
 ## Documentation
 
+- [Agent instructions](AGENTS.md) — progressive context for coding agents + [domain vocabulary](CONTEXT.md)
+- [Install with a coding agent](docs/install-for-agents.md) — paste-one-prompt deployment
+- [Gateway integrations](docs/integrations/README.md) — nginx / Caddy / Traefik / Envoy / APISIX / Higress / LiteLLM
+- [Agent Experience contract](docs/ax.md) — the authorize contract, error format, rate limits, discovery
 - [Positioning & product thesis](docs/positioning.md) — USP, competitive map, what we will/won't build
 - [Security model](docs/security-model.md) — encryption, auth, audit chain
 - [System architecture](docs/system-architecture.md)
 - [Deployment guide](docs/deployment-guide.md) — dev + single-VPS production
+- [Key rotation & master key runbook](docs/key-rotation.md)
 - [Decision log](docs/decisions.md) — why valtag is what it is (and isn't)
-- [Refactor plan](docs/refactor-plan.md) — living roadmap with change logs
 
 ## Development
 
