@@ -158,6 +158,7 @@ On the roadmap: cloud STS lease providers, SSH certificate issuance, signed mult
 - The audit log is a **hash chain** — editing any row (IP, metadata, timestamps) breaks verification. Verify against an off-site anchor hash to also detect tail truncation.
 - Agent tokens live in the OS keychain, not in agent configs. On headless Linux, fall back to environment variables in a protected service unit.
 - Self-hosted only. Your approval flow, your keys, your audit data — nothing leaves your infrastructure. Pure Apache-2.0, no `ee/` directory, no feature gates, no CLA.
+- **Security contributions are a first-class ask** — break the audit chain, review the auth/gateway paths, ship hardening PRs. Private vulnerability reporting is enabled on this repo; safe harbor for good-faith research applies. See [SECURITY.md](SECURITY.md).
 
 > **Status: v0.x, pre-release.** Solo-maintained, moving fast. If you deploy it, read [SECURITY.md](SECURITY.md) first, change every default credential, and keep audit-chain heads anchored off-site. See [docs/positioning.md](docs/positioning.md) for the product thesis and known gaps.
 
