@@ -1,0 +1,25 @@
+# LiteLLM proxy with the valtag ask-first gate.
+#
+# Requires: valtag deployed with the gateway listener (GATEWAY_ENABLED=true)
+# reachable at 127.0.0.1:10256 on this host, and an agent + agent token in
+# valtag (Agents page → Issue Token). Mint a lease, then call LiteLLM:
+#
+#   curl http://127.0.0.1:14000/v1/chat/completions \
+#     -H "Authorization: Bearer valtag_dk_…" \
+#     -d '{"model":"valtag-mock","messages":[…]}'
+#
+# The gate is fail-closed: valtag unreachable → 503; invalid/expired key → 401.
+# LiteLLM's own master key does NOT bypass the gate (verified: it gets 401).
+
+services:
+  litellm:
+    image: ghcr.io/berriai/litellm:main-stable
+    container_name: litellm-valtag
+    network_mode: host # reaches the valtag gateway listener on 127.0.0.1:10256
+    volumes:
+      - ./valtag_gate.py:/app/valtag_gate.py:ro
+      - ./config.yaml:/app/config.yaml:ro
+    command: ["--config", "/app/config.yaml", "--port", "14000"]
+    restart: unless-stopped
+    environment:
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:?set a random value — unused by the gate but required at startup}

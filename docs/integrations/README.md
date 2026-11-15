@@ -28,6 +28,7 @@ Authorization: Bearer valtag_dk_…  ──▶  POST|GET /gateway/v1/authorize
 | Caddy | forward_auth handler | [caddy.md](caddy.md) | ✅ container test |
 | Traefik | forwardAuth middleware | [traefik.md](traefik.md) | ✅ container test |
 | Apache APISIX | forward-auth plugin | [apisix.md](apisix.md) | config mapped from docs |
+| LiteLLM | custom auth callback | [litellm.md](litellm.md) | ✅ live staging |
 
 ## Runtime prerequisites (every gateway)
 

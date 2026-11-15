@@ -1,0 +1,15 @@
+# LiteLLM config — valtag as the auth gate (ask-first, fail-closed).
+#
+# The gate replaces LiteLLM's default key auth: every request must present a
+# valtag derived key (Authorization: Bearer valtag_dk_…) validated against
+# valtag's authorize endpoint. Swap the mock model below for real providers
+# (openai/gpt-4o-mini with api_key: os.environ/OPENAI_API_KEY, etc.).
+
+model_list:
+  - model_name: valtag-mock
+    litellm_params:
+      model: openai/valtag-mock
+      mock_response: "hello from valtag-gated mock"
+
+general_settings:
+  custom_auth: valtag_gate.user_api_key_auth
