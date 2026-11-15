@@ -1,4 +1,4 @@
-# valtag — the ask-first credential gate for AI agents
+# ValtAG — Valt for Agents: the ask-first credential gate for AI agents
 
 [![CI/CD](https://github.com/ldphuong-vn/valtag/actions/workflows/ci.yml/badge.svg)](https://github.com/ldphuong-vn/valtag/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/ldphuong-vn/valtag?label=release)](https://github.com/ldphuong-vn/valtag/releases)
