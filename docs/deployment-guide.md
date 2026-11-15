@@ -94,6 +94,24 @@ curl https://api.example.com/health          # → ok
 docker compose -f docker-compose.prod.yml ps # all Up, postgres healthy
 ```
 
+### Monitoring with Grafana
+
+`METRICS_ENABLED=true` exposes `/metrics` (Prometheus format: request counters
+by route pattern/method/status, Go runtime, process stats). A ready-made
+dashboard ships with the repo:
+
+1. Point a Prometheus instance at `http://<valtag-host>:8080/metrics` —
+   **internal network only**, `/metrics` has no auth.
+2. Grafana → Dashboards → Import →
+   [`deploy/grafana/valtag-overview.json`](../deploy/grafana/valtag-overview.json)
+   → select the Prometheus datasource.
+3. Panels: request rate by route, status-code mix (401/403/429 highlighted),
+   top routes, Go runtime (goroutines/heap/GC), process CPU/FDs.
+
+Latency histograms are not instrumented yet (counters only) — adding a
+`valtag_http_request_duration_seconds` histogram is the natural next step if
+p99 views become necessary.
+
 ### Day-2 operations
 
 - **Update**: `git pull` → `docker compose -f docker-compose.prod.yml up -d --build`
