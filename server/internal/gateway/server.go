@@ -69,11 +69,13 @@ func (s *Server) ListenAndServe(ctx context.Context) error {
 }
 
 // ServeHTTP dispatches proxy requests (HTTP CONNECT or regular HTTP).
-// POST /gateway/v1/authorize is the ext-auth endpoint for AI gateways
-// (Higress forward_auth): validate the presented derived key and return the
-// provider's real credential as response headers instead of proxying.
+// Any method on /gateway/v1/authorize is the ext-auth endpoint for AI
+// gateways (Higress forward_auth POSTs; nginx auth_request and Caddy
+// forward_auth GETs — method-agnostic so every forward-auth flavor
+// integrates): validate the presented derived key and return the provider's
+// real credential as response headers instead of proxying.
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.Method == http.MethodPost && r.URL.Path == "/gateway/v1/authorize" {
+	if r.URL.Path == "/gateway/v1/authorize" {
 		s.handleAuthorize(w, r)
 		return
 	}
