@@ -67,10 +67,13 @@ Reports about the shared staging demo should be coordinated first — see
 
 valtag is **least-knowledge, not zero-knowledge** — stated honestly:
 
-- Secret values are encrypted client-side (AES-256-GCM envelope encryption:
-  DEK wraps the value, master key wraps the DEK); the server stores
-  ciphertext. **The server does decrypt approved secrets to deliver them** —
-  plaintext exists only at approved delivery time.
+- Secret values are encrypted at rest with AES-256-GCM envelope encryption:
+  the **server** generates a DEK per secret, encrypts the value with it and
+  wraps the DEK with a master key held in the server's environment
+  (`VAULT_MASTER_KEY`). A database dump alone yields ciphertext only.
+  **The server does decrypt secrets to deliver them** — anyone holding the
+  database *and* the master key, or with code execution on the server, can
+  read them.
 - Credentials issued to agents are leases with TTLs; derived keys
   (`valtag_dk_…`) are HMAC-bound and useless outside valtag's gateway.
 - The audit log is a SHA-256 hash chain — editing any row breaks verification;

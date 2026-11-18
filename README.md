@@ -155,7 +155,7 @@ On the roadmap: cloud STS lease providers, SSH certificate issuance, signed mult
 
 ## Security model, honestly
 
-- Secrets are encrypted at rest (AES-256-GCM envelope encryption; blobs in Postgres, DEKs wrapped with the master key). **The server does decrypt** approved secrets to deliver them — valtag is not zero-knowledge; it is *least-knowledge*: the standing state is always ciphertext, plaintext exists only at approved delivery time.
+- Secrets are encrypted at rest (AES-256-GCM envelope encryption; blobs in Postgres, DEKs wrapped with a master key held in the server's environment). **The server does decrypt** secrets to deliver or reveal them — valtag is not zero-knowledge; it is *least-knowledge*: the standing state is ciphertext (a database dump alone yields nothing), and plaintext exists in server memory only while a secret is created, revealed or delivered.
 - Credentials issued to agents are **leases with TTLs**; for derived keys the master key never leaves the server and the issued key is useless to anything but valtag's gateway.
 - The audit log is a **hash chain** — editing any row (IP, metadata, timestamps) breaks verification. Verify against an off-site anchor hash to also detect tail truncation.
 - Agent tokens live in the OS keychain, not in agent configs. On headless Linux, fall back to environment variables in a protected service unit.
