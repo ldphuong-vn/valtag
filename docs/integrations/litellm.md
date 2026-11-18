@@ -60,6 +60,19 @@ curl http://127.0.0.1:14000/v1/chat/completions \
 # same key after revoke → 401
 ```
 
+## Security notes
+
+- **The raw lease key never reaches LiteLLM's logs.** LiteLLM hashes
+  `UserAPIKeyAuth.api_key` only when it starts with `sk-`; anything else is
+  copied verbatim into `user_api_key_hash` (logs, spend logs, Langfuse /
+  Datadog / OTEL payloads). The gate therefore hands LiteLLM a one-way
+  fingerprint (`valtag-<sha256[:24]>`): per-lease attribution survives, the
+  credential does not leak.
+- Gate error logs carry the exception type only — never a traceback, which
+  can echo request headers.
+- Keep the valtag authorize URL on loopback/private networking; the gate sends
+  the lease key to it on every request.
+
 ## Verified matrix (staging, litellm:main-stable)
 
 | Request | Result |

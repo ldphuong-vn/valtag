@@ -18,6 +18,7 @@ Env: VALTAG_AUTHORIZE_URL (default http://127.0.0.1:10256/gateway/v1/authorize),
 VALTAG_TIMEOUT_SECONDS (default 3).
 """
 
+import hashlib
 import logging
 import os
 
@@ -49,8 +50,9 @@ async def user_api_key_auth(request: Request, api_key: str) -> UserAPIKeyAuth:
                 headers={"Authorization": f"Bearer {key}"},
             )
     except Exception as e:
-        # fail-closed: valtag unreachable → deny
-        log.exception("valtag_gate: authorize call failed")
+        # fail-closed: valtag unreachable → deny. Log the exception type only —
+        # a traceback can echo the request headers (i.e. the lease key).
+        log.error("valtag_gate: authorize call failed (%s)", type(e).__name__)
         raise HTTPException(
             status_code=503,
             detail=f"valtag unavailable — fail-closed ({type(e).__name__})",
@@ -65,4 +67,9 @@ async def user_api_key_auth(request: Request, api_key: str) -> UserAPIKeyAuth:
         )
 
     agent_id = resp.headers.get("x-valtag-agent-id") or "valtag-agent"
-    return UserAPIKeyAuth(api_key=api_key, user_id=agent_id)
+    # LiteLLM hashes UserAPIKeyAuth.api_key only when it starts with "sk-";
+    # anything else is copied verbatim into user_api_key_hash (logs, spend
+    # logs, Langfuse/Datadog/OTEL payloads). Never hand it the raw lease key —
+    # give it a stable one-way fingerprint so per-lease attribution survives.
+    fingerprint = "valtag-" + hashlib.sha256(key.encode()).hexdigest()[:24]
+    return UserAPIKeyAuth(api_key=fingerprint, user_id=agent_id)
