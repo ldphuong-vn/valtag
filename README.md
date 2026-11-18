@@ -66,7 +66,7 @@ config, not code:
 | Caddy | `forward_auth` | ✅ container-tested |
 | LiteLLM | custom auth callback | ✅ live-tested — LiteLLM's own master key does not bypass the gate |
 | CLIProxyAPI · new-api | edge swap of their inbound key | ✅ live-tested ([recipe](docs/integrations/openai-compatible-gateways.md)) |
-| Traefik | `forwardAuth` | 🟡 config from its docs, not yet run |
+| Traefik | `forwardAuth` | ✅ live-tested — auth request sent as configured, fail-closed |
 | Envoy / Istio ecosystems | `ext_authz` HTTP filter | 🟡 draft, not yet run (known path gap) |
 | Apache APISIX | `forward-auth` | 🟡 config from its docs, not yet run |
 

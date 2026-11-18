@@ -29,7 +29,7 @@ Authorization: Bearer valtag_dk_…  ──▶  POST|GET /gateway/v1/authorize
 | CLIProxyAPI | edge forward-auth + inbound-key swap | [openai-compatible-gateways.md](openai-compatible-gateways.md) | ✅ live E2E |
 | new-api | edge forward-auth + inbound-key swap | [openai-compatible-gateways.md](openai-compatible-gateways.md) | ✅ live E2E (auth layer) |
 | 9Router / OmniRoute | edge forward-auth + inbound-key swap | [openai-compatible-gateways.md](openai-compatible-gateways.md) | 🟡 from source reading, not run |
-| Traefik | forwardAuth middleware | [traefik.md](traefik.md) | 🟡 config from docs, not yet run |
+| Traefik | forwardAuth middleware | [traefik.md](traefik.md) | ✅ live test (v3.3) |
 | Envoy (raw) | ext_authz HTTP filter | [envoy.md](envoy.md) | 🟡 draft, not yet run — known path gap |
 | Apache APISIX | forward-auth plugin | [apisix.md](apisix.md) | 🟡 config from docs, not yet run |
 
