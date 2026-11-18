@@ -1,5 +1,12 @@
 # valtag — Team Pitch
 
+> **Historical document (March 2026) — kept for context, not current
+> documentation.** It predates the Postgres-only storage decision and the
+> honest security-model rewrite: mentions of MinIO, Stripe billing,
+> zero-knowledge and browser-side encryption do not match the current
+> implementation (see [security-model.md](security-model.md) and
+> [decisions.md](decisions.md)).
+
 > MCP-native secret vault with human-in-the-loop approval for AI agents.
 
 ---

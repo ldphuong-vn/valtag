@@ -8,7 +8,7 @@ Client Layer:  MCP Server (Rust, stdio) + Dashboard (Next.js)
 Backend:       Go Monolith (chi/v5 router)
                - Auth, Vault, Workflow, Audit, Notify, Org, Agent, Gateway modules
     ↓
-Data Layer:    PostgreSQL 16 (metadata + audit) + MinIO (encrypted blobs)
+Data Layer:    PostgreSQL 16 (metadata + audit + encrypted secret blobs)
     ↑
 Proxy:         Caddy (reverse proxy + auto TLS)
     ↑
@@ -138,7 +138,7 @@ Go linting via `.golangci.yml` (govet shadow, errcheck, staticcheck, unused).
 | Package | Purpose |
 |---------|---------|
 | `internal/auth/` | Argon2id hashing, JWT RS256 issuance/validation, auth middleware, register/login/refresh handlers |
-| `internal/vault/` | MinIO storage layer, vault service (CRUD), REST handler |
+| `internal/vault/` | Vault service (CRUD), server-side envelope encryption, Postgres blob storage, REST handler |
 | `internal/middleware/` | Security headers, sliding-window rate limiter |
 | `internal/database/audit.go` | Audit log writer |
 | `pkg/apierror/` | Standard API error JSON response format |

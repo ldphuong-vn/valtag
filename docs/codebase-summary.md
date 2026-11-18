@@ -11,7 +11,7 @@ vaultsaas/
 │   │   └── seed/            # Data seeder (stub)
 │   ├── internal/
 │   │   ├── auth/            # Argon2id, JWT RS256, middleware, handlers, Google OAuth2 (Phase 1.3/1.5)
-│   │   ├── vault/           # MinIO storage, service CRUD, REST handler (Phase 1.3)
+│   │   ├── vault/           # Vault service CRUD, envelope encryption, Postgres blob storage (Phase 1.3; MinIO removed)
 │   │   ├── middleware/      # Security headers, rate limiter (Phase 1.3)
 │   │   ├── database/        # audit.go — audit log writer (Phase 1.3)
 │   │   ├── policy/          # Risk tier engine (Tier 1-4 by credential type) (Phase 1.4)
@@ -42,7 +42,7 @@ vaultsaas/
 │   │   ├── migrate/         # Migration runner
 │   │   ├── seed/            # Data seeder
 │   │   └── valtag/            # valtag CLI binary (cobra) — login, secrets, agents, scan, run (Phase 14)
-│   ├── go.mod               # chi/v5, go-chi/cors, golang-jwt/jwt/v5, google/uuid, minio-go/v7,
+│   ├── go.mod               # chi/v5, go-chi/cors, golang-jwt/jwt/v5, google/uuid,
 │   │   │                   #   golang.org/x/oauth2, testify/v1.9.0, go-redis/v9, cobra
 │   ├── go.sum
 │   └── Dockerfile
@@ -139,7 +139,7 @@ vaultsaas/
 
 | Layer | Technology |
 |---|---|
-| Backend | Go 1.22, chi/v5 v5.1.0, go-chi/cors v1.2.1, golang-jwt/jwt/v5, google/uuid, minio-go/v7, golang.org/x/oauth2, testify v1.9.0, go-redis/v9, cobra |
+| Backend | Go 1.22, chi/v5 v5.1.0, go-chi/cors v1.2.1, golang-jwt/jwt/v5, google/uuid, golang.org/x/oauth2, testify v1.9.0, go-redis/v9, cobra |
 | Frontend | Next.js 15.1.0, React 19, TypeScript 5.7, Tailwind v4, shadcn/ui, lucide-react, Geist fonts, vitest |
 | MCP Server | Rust (tokio async, serde, reqwest, keyring, aes-gcm, axum, clap — see Cargo.toml) |
 | CLI | valtag CLI (cobra), Go SDK (stdlib), Python SDK (urllib) |

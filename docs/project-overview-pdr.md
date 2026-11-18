@@ -1,5 +1,11 @@
 # valtag - Product Development Requirements
 
+> **Historical document — kept for context, not current documentation.**
+> Claims like "zero-knowledge" and "client-side encryption" predate the
+> honest security-model rewrite: encryption is server-side envelope
+> encryption wrapped by `VAULT_MASTER_KEY` (see
+> [security-model.md](security-model.md)).
+
 ## Product
 **valtag** - MCP-native secret vault with human-in-the-loop approval workflow for AI agents.
 

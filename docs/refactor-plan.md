@@ -1,5 +1,9 @@
 # valtag — Kế hoạch refactor (soạn 2026-08-31)
 
+> **Tài liệu lịch sử — giữ làm bối cảnh, không phải mô tả hệ thống hiện tại.**
+> Các mục "cần sửa" trong đây đã được xử lý qua các đợt Phase 0 → M2
+> (kiểm chứng từng claim xem [security-model.md](security-model.md)).
+
 Nguồn: rà soát code trực tiếp ngày 2026-08-31 + thảo luận chiến lược
 (xem [decisions.md](decisions.md) cho lý do từng hướng). Mục tiêu refactor:
 biến valtag từ "vault có SaaS layer dở dang" thành **MCP credential gate tự host,

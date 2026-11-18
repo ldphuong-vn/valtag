@@ -1,5 +1,10 @@
 # Project Changelog
 
+> **Historical record.** Each entry reflects the state of the codebase at
+> that date (including since-removed pieces such as MinIO); the current
+> implementation is described in [security-model.md](security-model.md) and
+> [system-architecture.md](system-architecture.md).
+
 ## [2.0.0] - 2026-03-19 — Phase 2: Product-Market Fit (Approval Channels, Custom Policies, valtag CLI)
 
 ### Added

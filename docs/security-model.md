@@ -36,7 +36,8 @@
 - TLS terminates at your edge (Caddy, Cloudflare, or your gateway) — see the
   [deployment guide](deployment-guide.md).
 - JWT access tokens are signed RS256 (`server/internal/auth/jwt.go`): 15
-  minutes. Refresh tokens: 7 days, rotated, stored as hashes
+  minutes. Refresh tokens: 7 days (`auth/handler.go:342`,
+  `time.Now().Add(7*24*time.Hour)`), rotated, stored as hashes
   (`refresh_tokens.token_hash`).
 
 ### Key storage

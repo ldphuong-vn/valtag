@@ -1,5 +1,10 @@
 # valtag — Nhật ký quyết định chiến lược (2026-08-31)
 
+> **Tài liệu lịch sử.** Các quyết định định hướng (không làm SaaS, tên
+> `valtag`, Postgres thay MinIO…) vẫn còn hiệu lực; phần mô tả kỹ thuật
+> chi tiết có thể đã trôi — đối chiếu
+> [security-model.md](security-model.md) trước khi dùng làm cơ sở.
+
 Tài liệu này ghi lại các quyết định định hướng cho valtag và **lý do** đưa ra quyết định
 đó, để tránh tranh luận lại từ đầu mỗi lần phát triển. Cập nhật khi có quyết định mới.
 

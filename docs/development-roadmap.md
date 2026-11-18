@@ -1,5 +1,9 @@
 # Development Roadmap
 
+> **Historical document (March 2026) — superseded.** The active roadmap now
+> lives in the maintainer's planning docs; the phase checkboxes below record
+> what was planned at that date (including since-removed MinIO storage).
+
 ## Phase 1: MVP (Current)
 
 ### Phase 1.1: Scaffolding & Infrastructure [DONE - 2026-03-16]
