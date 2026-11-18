@@ -19,6 +19,9 @@ services:
     volumes:
       - ./valtag_gate.py:/app/valtag_gate.py:ro
       - ./config.yaml:/app/config.yaml:ro
+      # Only needed for the upstream-key recipe (docs/integrations/litellm.md
+      # — "Upstream key"): the sidecar writes the lease file here.
+      # - ./secrets:/run/secrets:ro
     command: ["--config", "/app/config.yaml", "--port", "14000"]
     restart: unless-stopped
     environment:
