@@ -16,7 +16,7 @@
 #   - model_name: my-model
 #     litellm_params:
 #       model: openai/…
-#       api_key: "oidc/file//run/secrets/valtag-lease"
+#       api_key: "oidc/file//run/secrets/<lease-file>"   # path to the file this script writes
 #
 # NOTE: this is ONE shared lease for the whole proxy — every caller of
 # LiteLLM uses the same upstream credential. Per-caller isolation is the
