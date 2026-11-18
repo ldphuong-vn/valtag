@@ -39,9 +39,15 @@ async def user_api_key_auth(request: Request, api_key: str) -> UserAPIKeyAuth:
     # api_key = the presented bearer value (valtag_dk_…). Forward it to
     # valtag's authorize endpoint, which validates the lease and returns the
     # real upstream credential as headers — LiteLLM never holds it.
-    key = api_key
+    # LiteLLM passes api_key=None when no Authorization header is present
+    # (verified live: /v1/models, /v1/chat/completions) — deny cleanly.
+    if not api_key:
+        raise HTTPException(status_code=401, detail="valtag denied: missing credential")
+    key = api_key.strip()
     if key.startswith("Bearer "):
         key = key[7:]
+    if not key:
+        raise HTTPException(status_code=401, detail="valtag denied: missing credential")
 
     try:
         async with httpx.AsyncClient(timeout=TIMEOUT) as client:

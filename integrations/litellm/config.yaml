@@ -10,6 +10,13 @@ model_list:
     litellm_params:
       model: openai/valtag-mock
       mock_response: "hello from valtag-gated mock"
+  # Upstream key fetched from a file that a valtag sidecar refreshes
+  # (lease rotation). See docs/integrations/litellm.md — "Upstream key".
+  - model_name: fake-openai
+    litellm_params:
+      model: openai/fake
+      api_base: http://127.0.0.1:9999
+      api_key: "oidc/file//run/secrets/valtag-lease"
 
 general_settings:
   custom_auth: valtag_gate.user_api_key_auth
