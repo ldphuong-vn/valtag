@@ -5,10 +5,12 @@ conversation — synonyms create drift.
 
 ## Credentials
 
-- **Secret** — a stored credential item (name, type, encrypted value). Client-side
-  encrypted: the client generates a **DEK** (data encryption key), encrypts the
-  value, wraps the DEK with the master key; the server stores
-  `encrypted_blob` + `encrypted_dek` and never sees plaintext.
+- **Secret** — a stored credential item (name, type, encrypted value). The
+  **server** generates a **DEK** (data encryption key) per secret, encrypts the
+  value with AES-256-GCM and wraps the DEK with the master key; it stores the
+  ciphertext blob (Postgres `secret_blobs`) and the wrapped DEK. The server
+  decrypts to deliver or reveal a secret — valtag is least-knowledge, not
+  zero-knowledge (see docs/security-model.md).
 - **VAULT_MASTER_KEY** — base64 32-byte key wrapping secret DEKs and encrypting
   dynsecret data. Loss = vault unrecoverable. Rotated with
   `valtag-rotate-master-key` (see docs/key-rotation.md).

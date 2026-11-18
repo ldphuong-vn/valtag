@@ -21,10 +21,9 @@ Gateway:       Go HTTP Forward Proxy (:10256, optional)
 | Component | Tech | Purpose |
 |-----------|------|---------|
 | server/ | Go 1.22+ | REST API monolith |
-| dashboard/ | Next.js 15 | Web UI (SSR, client-side crypto) |
+| dashboard/ | Next.js 15 | Web UI (SSR; no client-side crypto — the server encrypts) |
 | mcp-server/ | Rust | Local MCP server for AI agents |
-| PostgreSQL | v16 | Metadata, audit logs (partitioned) |
-| MinIO | Latest | S3-compatible encrypted blob storage |
+| PostgreSQL | v16 | Metadata, encrypted secret blobs (`secret_blobs`), audit logs (partitioned) |
 | Caddy | v2 | Reverse proxy, auto TLS |
 
 ## Key Decisions

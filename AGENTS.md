@@ -3,7 +3,9 @@
 valtag is an MCP-native secret vault with human-in-the-loop approval for AI
 agents. Monorepo: Go backend (`server/`), Next.js dashboard (`dashboard/`),
 Rust MCP server (`mcp-server/`). Self-hosted: Postgres is the only stateful
-service; secrets are client-side encrypted (DEK + master key).
+service; secrets are encrypted server-side (per-secret DEK wrapped by the
+master key) and the server decrypts to deliver them — least-knowledge, not
+zero-knowledge (docs/security-model.md).
 
 `CLAUDE.md` is a pointer to this file; always edit `AGENTS.md`.
 
@@ -77,7 +79,7 @@ cd mcp-server && cargo clippy -- -D warnings
 ```text
 Dashboard (Next.js) ──▶ /api/proxy/[...path] (BFF, cookie→Bearer)
    ├─▶ Go API server (chi router, /api/v1/...)
-   │      ├─ vault (secret CRUD, client-side DEK encryption)
+   │      ├─ vault (secret CRUD, server-side envelope encryption)
    │      ├─ workflow (approval state machine, credentials)
    │      ├─ dynsecret (dynamic providers, derived keys valtag_dk_)
    │      ├─ audit (append-only SHA-256 hash chain)
