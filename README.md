@@ -64,10 +64,12 @@ config, not code:
 | Higress | ext-auth plugin | ✅ running live on a staging deployment |
 | nginx | `auth_request` | ✅ container-tested |
 | Caddy | `forward_auth` | ✅ container-tested |
-| Traefik | `forwardAuth` | ✅ container-tested |
-| Envoy / Istio ecosystems | `ext_authz` HTTP filter | ✅ same contract as Higress |
-| Apache APISIX | `forward-auth` | ✅ config mapped |
 | LiteLLM | custom auth callback | ✅ live-tested — LiteLLM's own master key does not bypass the gate |
+| Traefik | `forwardAuth` | 🟡 config from its docs, not yet run |
+| Envoy / Istio ecosystems | `ext_authz` HTTP filter | 🟡 draft, not yet run (known path gap) |
+| Apache APISIX | `forward-auth` | 🟡 config from its docs, not yet run |
+
+✅ = we ran it end-to-end. 🟡 = config written from the gateway's own documentation, not yet run against valtag — a starting point, not a guarantee.
 
 Full configs, verification steps and the fail-closed semantics:
 [docs/integrations/](docs/integrations/README.md). The gate replaces static

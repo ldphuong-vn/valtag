@@ -1,5 +1,8 @@
 # valtag × Traefik — forwardAuth middleware
 
+> **Status: config written from Traefik's documentation — not yet run against
+> valtag.** nginx and Caddy are the live-tested forward-auth integrations.
+
 Traefik's `forwardAuth` middleware forwards the original request (method and
 headers) to the auth endpoint and gates on the response status.
 

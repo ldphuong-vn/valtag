@@ -23,12 +23,16 @@ Authorization: Bearer valtag_dk_…  ──▶  POST|GET /gateway/v1/authorize
 | Gateway | Mechanism | Example | Verified |
 | --- | --- | --- | --- |
 | Higress | ext-auth plugin (forward_auth) | [demo/higress](../../demo/higress/README.md) | ✅ live staging |
-| Envoy (raw) | ext_authz HTTP filter | [envoy.md](envoy.md) | ✅ same filter contract as Higress |
 | nginx | auth_request module | [nginx.md](nginx.md) | ✅ container test |
 | Caddy | forward_auth handler | [caddy.md](caddy.md) | ✅ container test |
-| Traefik | forwardAuth middleware | [traefik.md](traefik.md) | ✅ container test |
-| Apache APISIX | forward-auth plugin | [apisix.md](apisix.md) | config mapped from docs |
 | LiteLLM | custom auth callback | [litellm.md](litellm.md) | ✅ live staging |
+| Traefik | forwardAuth middleware | [traefik.md](traefik.md) | 🟡 config from docs, not yet run |
+| Envoy (raw) | ext_authz HTTP filter | [envoy.md](envoy.md) | 🟡 draft, not yet run — known path gap |
+| Apache APISIX | forward-auth plugin | [apisix.md](apisix.md) | 🟡 config from docs, not yet run |
+
+✅ = run end-to-end by us (staging or container test). 🟡 = config written
+from the gateway's own documentation, not yet run against valtag — a starting
+point, not a guarantee.
 
 ## Runtime prerequisites (every gateway)
 

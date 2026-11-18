@@ -1,8 +1,18 @@
 # valtag × Envoy — ext_authz HTTP filter
 
-Envoy's `ext_authz` HTTP filter is the mechanism Higress's ext-auth plugin
-wraps — so a raw Envoy deployment integrates with the exact same contract
-this repo already runs live (verified on the staging Higress deployment).
+> **Status: draft — not yet validated or run against valtag.** Known gap:
+> Envoy's HTTP `ext_authz` sends the check to `path_prefix` **plus the
+> original request path** (for a request to `/`, that is
+> `/gateway/v1/authorize/`), while valtag's endpoint currently matches only
+> the exact path `/gateway/v1/authorize`
+> (`server/internal/gateway/server.go:78`). As written, every request would
+> be denied (fail-closed). The endpoint has to accept the suffix before this
+> page is usable. Until then use nginx, Caddy or Higress — those are
+> live-tested.
+
+Envoy's `ext_authz` HTTP filter calls an external HTTP service before
+forwarding a request and can copy headers from the response onto the
+forwarded request — the same shape valtag's authorize endpoint exposes.
 
 ```yaml
 # envoy.yaml — minimal sidecar/gateway with valtag as the auth gate
@@ -28,7 +38,10 @@ static_resources:
                     typed_config:
                       "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz
                       http_service:
-                        uri: 127.0.0.1:10256
+                        server_uri:
+                          uri: 127.0.0.1:10256
+                          cluster: valtag_authorize
+                          timeout: 2s
                         path_prefix: /gateway/v1/authorize
                         authorization_request:
                           allowed_headers:
@@ -55,21 +68,24 @@ static_resources:
         endpoints: [{ lb_endpoints: [{ endpoint: { address: { socket_address: { address: 127.0.0.1, port_value: 10256 } } } }] }]
 ```
 
-- `path_prefix` makes Envoy send the original request to
-  `POST /gateway/v1/authorize/<original-path>` — the authorize endpoint
-  reads headers only and ignores the suffix.
+- `server_uri` points the filter at the `valtag_authorize` cluster below.
+- `path_prefix` — Envoy appends the original request path to it (see the
+  status note above).
 - `allowed_upstream_headers` copies valtag's response headers onto the
   forwarded request — the credential replaces the derived key.
-- 401/403 from valtag → Envoy denies without touching the upstream
-  (fail-closed by default: `clear_route_cache`, no `failure_mode_allow`).
+- A 401/403 from valtag → Envoy denies without touching the upstream.
+  `failure_mode_allow` is left at its default (`false`), so an unreachable
+  valtag also denies (fail-closed).
 
-## Verify
+## Verify (once the path gap is closed)
 
 ```bash
 curl -H "Authorization: Bearer valtag_dk_…" http://127.0.0.1:10000/   # → 200
 curl http://127.0.0.1:10000/                                          # → 401
 ```
 
-The staging Higress deployment runs this exact filter contract through the
-Higress ext-auth plugin — same endpoint, same headers, same fail-closed
-semantics (verified end-to-end, see [demo/higress](../../demo/higress/README.md)).
+The Higress deployment in [demo/higress](../../demo/higress/README.md) uses
+the same HTTP contract, but through Higress's ext-auth plugin in
+`forward_auth` mode, which calls the configured path as-is. That is a
+different code path from Envoy's `ext_authz` filter, so it does not verify
+this page.
