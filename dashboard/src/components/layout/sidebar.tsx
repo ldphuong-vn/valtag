@@ -3,18 +3,42 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { KeyRound, ClipboardCheck, ScrollText, Settings, LogOut, Shield, Bot, Building2, ChevronDown, ScanLine, Database, Bell, ShieldCheck, Layers, FolderOpen, ShieldAlert } from 'lucide-react'
+import { KeyRound, ClipboardCheck, ScrollText, Settings, LogOut, Shield, Bot, Building2, ChevronDown, ScanLine, Database, Bell, ShieldCheck, Layers, FolderOpen, ShieldAlert, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-const navItems = [
-  { href: '/secrets', label: 'Secrets', icon: KeyRound },
-  { href: '/approvals', label: 'Approvals', icon: ClipboardCheck },
-  { href: '/agents', label: 'Agents', icon: Bot },
-  { href: '/providers', label: 'Providers', icon: Database },
-  { href: '/audit', label: 'Audit', icon: ScrollText },
-  { href: '/projects', label: 'Projects', icon: FolderOpen },
-  { href: '/scans', label: 'Scanner', icon: ScanLine },
-  { href: '/settings', label: 'Settings', icon: Settings },
+// IA modeled on the entity-first sidebars of Vault UI (Secrets/Access/Tools),
+// 1Password Business (People/Vaults/Policies/Reports) and Tailscale
+// (Machines/Users/Access controls): primary objects first, policy and
+// operations as their own labeled groups — never buried under Settings.
+const navGroups: { label: string; items: { href: string; label: string; icon: LucideIcon }[] }[] = [
+  {
+    label: 'Day-to-day',
+    items: [
+      { href: '/secrets', label: 'Secrets', icon: KeyRound },
+      { href: '/approvals', label: 'Approvals', icon: ClipboardCheck },
+    ],
+  },
+  {
+    label: 'Access & policies',
+    items: [
+      { href: '/agents', label: 'Agents', icon: Bot },
+      { href: '/projects', label: 'Projects', icon: FolderOpen },
+    ],
+  },
+  {
+    label: 'Credential engines',
+    items: [
+      { href: '/providers', label: 'Providers', icon: Database },
+      { href: '/scans', label: 'Secret Scanner', icon: ScanLine },
+    ],
+  },
+  {
+    label: 'Operations',
+    items: [
+      { href: '/audit', label: 'Audit', icon: ScrollText },
+      { href: '/settings', label: 'Settings', icon: Settings },
+    ],
+  },
 ]
 
 async function handleLogout() {
@@ -93,7 +117,14 @@ export default function Sidebar() {
     }
   }, [])
 
-  const links = [...navItems, { href: policyHref, label: 'Policies', icon: ShieldCheck }]
+  const groups = navGroups.map(g => ({
+    ...g,
+    // Policies belong to the current project (entry from its own group, next
+    // to Projects — not buried after Settings).
+    items: g.label === 'Access & policies'
+      ? [...g.items, { href: policyHref, label: 'Policies', icon: ShieldCheck as LucideIcon }]
+      : g.items,
+  }))
 
   return (
     <aside className="flex flex-col w-60 border-r bg-card shrink-0">
@@ -114,7 +145,7 @@ export default function Sidebar() {
           <span className="truncate flex-1 text-left">Organizations</span>
           <ChevronDown className="w-3.5 h-3.5 shrink-0 opacity-50" />
         </Link>
-        
+
         {workspaceName ? (
           <div className="flex items-center gap-2 px-2 py-1.5 rounded-md text-sm font-semibold bg-accent/50 text-foreground">
             <Layers className="w-4 h-4 shrink-0 text-primary" />
@@ -128,21 +159,30 @@ export default function Sidebar() {
         )}
       </div>
 
-      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-        {links.map(({ href, label, icon: Icon }) => (
-          <Link
-            key={`${href}-${label}`}
-            href={href}
-            className={cn(
-              'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
-              (label === 'Policies' ? pathname.includes('/policies') : pathname.startsWith(href))
-                ? 'bg-primary/10 text-primary'
-                : 'text-muted-foreground hover:bg-accent hover:text-foreground',
-            )}
-          >
-            <Icon className="w-4 h-4 shrink-0" />
-            {label}
-          </Link>
+      <nav className="flex-1 p-3 overflow-y-auto space-y-4">
+        {groups.map(group => (
+          <div key={group.label}>
+            <div className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+              {group.label}
+            </div>
+            <div className="space-y-1">
+              {group.items.map(({ href, label, icon: Icon }) => (
+                <Link
+                  key={`${href}-${label}`}
+                  href={href}
+                  className={cn(
+                    'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                    (label === 'Policies' ? pathname.includes('/policies') : pathname.startsWith(href))
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                  )}
+                >
+                  <Icon className="w-4 h-4 shrink-0" />
+                  {label}
+                </Link>
+              ))}
+            </div>
+          </div>
         ))}
       </nav>
 
