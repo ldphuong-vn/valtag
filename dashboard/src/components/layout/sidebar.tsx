@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { KeyRound, ClipboardCheck, ScrollText, Settings, LogOut, Shield, Bot, Building2, ChevronDown, ScanLine, Database, Bell, ShieldCheck, Layers, FolderOpen, ShieldAlert, type LucideIcon } from 'lucide-react'
+import { KeyRound, ClipboardCheck, ScrollText, Settings, LogOut, Shield, Bot, Building2, ChevronDown, ScanLine, Database, ShieldCheck, Layers, FolderOpen, ShieldAlert, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 // IA modeled on the entity-first sidebars of Vault UI (Secrets/Access/Tools),
@@ -187,18 +187,6 @@ export default function Sidebar() {
       </nav>
 
       <div className="p-3 border-t space-y-1">
-        <Link
-          href="/settings/notifications"
-          className={cn(
-            'flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors',
-            pathname.startsWith('/settings/notifications')
-              ? 'bg-primary/10 text-primary'
-              : 'text-muted-foreground hover:bg-accent hover:text-foreground',
-          )}
-        >
-          <Bell className="w-4 h-4 shrink-0" />
-          Notifications
-        </Link>
         <Link
           href="/admin"
           className={cn(

@@ -3,13 +3,14 @@ import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/auth'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import ProfileCard from './profile-card'
-import ChannelsCard from './channels-card'
+import NotificationsChannelsCard from './notifications-channels-card'
 import ChangePasswordCard from './change-password-card'
 import SignOutButton from './sign-out-button'
 
-// Settings: profile + contact channels + security. (Usage was removed
-// 2026-11-21 — valtag has no plans/quotations to sell; usage counters live
-// with the ops metrics, not in the user-facing settings.)
+// Settings: profile + notification channels (config, not just a mirror) +
+// security. The separate /settings/notifications page was folded in here
+// 2026-11-21. (Usage was removed — valtag has no plans to sell; usage
+// counters live with the ops metrics, not in user-facing settings.)
 export default async function SettingsPage() {
   const cookieStore = await cookies()
   const token = cookieStore.get('valt_access_token')?.value
@@ -22,7 +23,7 @@ export default async function SettingsPage() {
 
       <ProfileCard fallbackId={session.id} />
 
-      <ChannelsCard />
+      <NotificationsChannelsCard />
 
       <ChangePasswordCard />
 

@@ -23,7 +23,11 @@ interface SlackIntegration {
   workspace_id: string
 }
 
-export default function NotificationsPage() {
+// Where approval requests reach this user outside the dashboard. Embedded
+// directly in /settings (2026-11-21) — the separate Notifications page was
+// folded in so all personal settings live on one page. The Slack OAuth
+// callback now lands back on /settings?slack=connected.
+export default function NotificationsChannelsCard() {
   const [channels, setChannels] = useState<NotificationChannel[]>([])
   const [channelType, setChannelType] = useState('email')
   const [handle, setHandle] = useState('')
@@ -89,16 +93,15 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="max-w-lg space-y-4">
-      <h2 className="text-lg font-semibold">Notification Channels</h2>
-      <p className="text-sm text-muted-foreground">
-        Link channels to receive approval notifications. Slack and Telegram require verification after linking.
-      </p>
-
+    <>
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Add Channel</CardTitle>
-          <CardDescription>One channel per type. Adding again replaces the existing one.</CardDescription>
+          <CardTitle className="text-base">Add channel</CardTitle>
+          <CardDescription>
+            Link channels to receive approval notifications. One channel per type;
+            adding again replaces the existing one. Slack and Telegram require
+            verification after linking.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex gap-2">
@@ -137,7 +140,7 @@ export default function NotificationsPage() {
 
       {channels.length > 0 && (
         <Card>
-          <CardHeader><CardTitle className="text-base">Linked Channels</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base">Linked channels</CardTitle></CardHeader>
           <CardContent className="space-y-2">
             {channels.map(ch => (
               <div key={ch.id} className="flex items-center justify-between rounded-md border px-3 py-2">
@@ -168,7 +171,7 @@ export default function NotificationsPage() {
       {/* Slack Workspace Integration (org-level) */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Slack Workspace</CardTitle>
+          <CardTitle className="text-base">Slack workspace</CardTitle>
           <CardDescription>Connect your org&apos;s Slack workspace to receive approval notifications.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -214,6 +217,6 @@ export default function NotificationsPage() {
           )}
         </CardContent>
       </Card>
-    </div>
+    </>
   )
 }

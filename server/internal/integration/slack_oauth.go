@@ -92,7 +92,7 @@ func (h *SlackOAuthHandler) Callback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, h.dashboardURL+"/settings/notifications?slack=connected", http.StatusFound)
+	http.Redirect(w, r, h.dashboardURL+"/settings?slack=connected", http.StatusFound)
 }
 
 type slackTokenResponse struct {
