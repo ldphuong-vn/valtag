@@ -3,8 +3,16 @@
 import { useEffect, useState } from 'react'
 import { ApiError, api } from '@/lib/api-client'
 import type { Project } from '@/types/api'
-import { FolderOpen, CheckCircle2, ArrowRight } from 'lucide-react'
+import { FolderOpen, CheckCircle2, ArrowRight, Plus } from 'lucide-react'
 import Link from 'next/link'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Button } from '@/components/ui/button'
+
+function slugify(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40)
+}
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([])
@@ -12,11 +20,21 @@ export default function ProjectsPage() {
   const [error, setError] = useState<string | null>(null)
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null)
   const [hasWorkspace, setHasWorkspace] = useState(false)
+  const [workspaceId, setWorkspaceId] = useState('')
+
+  // create-project form (server API existed — POST /workspaces/{id}/projects —
+  // the dashboard just never had a button; anh, 2026-11-21)
+  const [showCreate, setShowCreate] = useState(false)
+  const [projName, setProjName] = useState('')
+  const [projSlug, setProjSlug] = useState('')
+  const [slugTouched, setSlugTouched] = useState(false)
+  const [creating, setCreating] = useState(false)
 
   useEffect(() => {
     const load = async () => {
       const workspaceId = localStorage.getItem('valt_current_workspace')
       setHasWorkspace(!!workspaceId)
+      setWorkspaceId(workspaceId ?? '')
       setError(null)
 
       if (!workspaceId) {
@@ -67,6 +85,23 @@ export default function ProjectsPage() {
     setCurrentProjectId(projectId)
   }
 
+  async function handleCreate() {
+    if (!projName.trim() || !projSlug.trim() || !workspaceId) return
+    setCreating(true)
+    setError(null)
+    try {
+      const created = await api.projects.create(workspaceId, { name: projName.trim(), slug: projSlug.trim() })
+      setShowCreate(false)
+      setProjName(''); setProjSlug(''); setSlugTouched(false)
+      if (created?.id) selectProject(created.id)
+      window.dispatchEvent(new Event('valtag:project-changed'))
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to create project')
+    } finally {
+      setCreating(false)
+    }
+  }
+
   if (!hasWorkspace) {
     return (
       <div className="p-6 max-w-xl">
@@ -96,9 +131,14 @@ export default function ProjectsPage() {
 
   return (
     <div className="p-6 max-w-3xl">
-      <div className="flex items-center gap-3 mb-6">
-        <FolderOpen className="w-5 h-5 text-muted-foreground" />
-        <h1 className="text-xl font-semibold">Projects</h1>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <FolderOpen className="w-5 h-5 text-muted-foreground" />
+          <h1 className="text-xl font-semibold">Projects</h1>
+        </div>
+        <Button onClick={() => { setShowCreate(true); setProjName(''); setProjSlug(''); setSlugTouched(false); setError(null) }}>
+          <Plus className="w-4 h-4" /> New Project
+        </Button>
       </div>
 
       {error && (
@@ -115,7 +155,10 @@ export default function ProjectsPage() {
         <div className="flex flex-col items-center justify-center p-12 border rounded-lg bg-card/50 border-dashed text-center">
           <FolderOpen className="w-12 h-12 text-muted-foreground/50 mb-4" />
           <h3 className="text-lg font-medium mb-1">No projects found</h3>
-          <p className="text-sm text-muted-foreground">This workspace doesn't have any projects yet.</p>
+          <p className="text-sm text-muted-foreground mb-6">This workspace doesn&apos;t have any projects yet.</p>
+          <Button onClick={() => { setShowCreate(true); setProjName(''); setProjSlug(''); setSlugTouched(false) }}>
+            <Plus className="w-4 h-4" /> Create the first project
+          </Button>
         </div>
       ) : (
         <ul className="space-y-3">
@@ -158,6 +201,47 @@ export default function ProjectsPage() {
           ))}
         </ul>
       )}
+
+      <Dialog open={showCreate} onOpenChange={setShowCreate}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>New project</DialogTitle>
+            <DialogDescription>
+              A project is a locked drawer for one system&apos;s secrets, policies and providers.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="proj-name">Name</Label>
+              <Input
+                id="proj-name"
+                value={projName}
+                autoFocus
+                onChange={e => {
+                  setProjName(e.target.value)
+                  if (!slugTouched) setProjSlug(slugify(e.target.value))
+                }}
+                placeholder="e.g. platform-prod"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="proj-slug">Slug</Label>
+              <Input
+                id="proj-slug"
+                value={projSlug}
+                onChange={e => { setSlugTouched(true); setProjSlug(e.target.value) }}
+                placeholder="platform-prod"
+              />
+            </div>
+          </div>
+          <DialogFooter className="pt-2">
+            <Button variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>
+            <Button disabled={creating || !projName.trim() || !projSlug.trim()} onClick={() => void handleCreate()}>
+              {creating ? 'Creating…' : 'Create project'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
