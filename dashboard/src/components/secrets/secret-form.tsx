@@ -30,6 +30,7 @@ export default function SecretForm({ open, secret, projectId, onClose, onSuccess
   const [value, setValue] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [confirmClose, setConfirmClose] = useState(false)
 
   useEffect(() => {
     if (secret) {
@@ -42,20 +43,21 @@ export default function SecretForm({ open, secret, projectId, onClose, onSuccess
       setName(''); setDescription(''); setCredentialType('api_key'); setSource(''); setValue('')
     }
     setError('')
+    setConfirmClose(false)
   }, [secret, open])
 
-  const isDirty = secret 
+  // Dirty = differs from the dialog's own starting state. The create dialog
+  // starts with credentialType='api_key', so that default must not count as
+  // an unsaved change (bug 2026-11-20: cancel on an untouched form still
+  // prompted "unsaved changes" because `credentialType !== ''` was always
+  // true).
+  const isDirty = secret
     ? (name !== secret.name || description !== (secret.description ?? '') || credentialType !== secret.credential_type || source !== (secret.source ?? ''))
-    : (name !== '' || description !== '' || credentialType !== '' || source !== '' || value !== '')
+    : (name !== '' || description !== '' || source !== '' || value !== '' || credentialType !== 'api_key')
 
   const handleClose = () => {
-    if (isDirty) {
-      if (window.confirm('You have unsaved changes. Are you sure you want to close?')) {
-        onClose()
-      }
-    } else {
-      onClose()
-    }
+    if (isDirty) setConfirmClose(true)
+    else onClose()
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -139,6 +141,25 @@ export default function SecretForm({ open, secret, projectId, onClose, onSuccess
           </DialogFooter>
         </form>
       </DialogContent>
+
+      {/* In-app discard confirmation — replaces window.confirm (native dialog
+          felt dated and gave no context). */}
+      <Dialog open={confirmClose} onOpenChange={(v) => { if (!v) setConfirmClose(false) }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Discard unsaved changes?</DialogTitle>
+            <DialogDescription>
+              Your edits in this form haven&apos;t been saved yet.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="pt-2">
+            <Button type="button" variant="outline" onClick={() => setConfirmClose(false)}>Keep editing</Button>
+            <Button type="button" variant="destructive" onClick={() => { setConfirmClose(false); onClose() }}>
+              Discard changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   )
 }
