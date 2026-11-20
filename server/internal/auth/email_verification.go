@@ -157,9 +157,10 @@ func (h *Handler) getMe(w http.ResponseWriter, r *http.Request) {
 	var emailVerified bool
 	var createdAt time.Time
 	var role string
+	var displayName string
 	err := h.pool.QueryRow(r.Context(),
-		`SELECT email, email_verified, created_at, role FROM users WHERE id = $1`, userID,
-	).Scan(&email, &emailVerified, &createdAt, &role)
+		`SELECT email, email_verified, created_at, role, COALESCE(display_name, '') FROM users WHERE id = $1`, userID,
+	).Scan(&email, &emailVerified, &createdAt, &role, &displayName)
 	if err != nil {
 		apierror.InternalError(w, "failed to load user")
 		return
@@ -172,5 +173,6 @@ func (h *Handler) getMe(w http.ResponseWriter, r *http.Request) {
 		"email_verified": emailVerified,
 		"created_at":     createdAt,
 		"role":           role,
+		"display_name":   displayName,
 	})
 }

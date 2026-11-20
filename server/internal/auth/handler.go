@@ -114,6 +114,7 @@ func (h *Handler) Routes() chi.Router {
 		r.Post("/resend-verification", h.resendVerification)
 		r.Post("/change-password", h.changePassword)
 		r.Get("/me", h.getMe)
+		r.Patch("/me/profile", h.updateProfile)
 	})
 	return r
 }
