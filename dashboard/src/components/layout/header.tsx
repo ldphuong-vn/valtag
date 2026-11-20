@@ -1,6 +1,8 @@
 import { getSession } from '@/lib/auth'
+import HeaderBell from './header-bell'
 
 const routeLabels: Record<string, string> = {
+  '/overview': 'Overview',
   '/secrets': 'Secrets',
   '/approvals': 'Approvals',
   '/audit': 'Audit Logs',
@@ -18,7 +20,8 @@ export default async function Header({ pathname = '' }: HeaderProps) {
   return (
     <header className="flex items-center justify-between h-14 px-6 border-b bg-card">
       <h1 className="text-sm font-semibold">{label}</h1>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
+        <HeaderBell />
         <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-xs font-medium text-primary">
           {session?.email?.[0]?.toUpperCase() ?? 'U'}
         </div>

@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { KeyRound, ClipboardCheck, ScrollText, Settings, LogOut, Shield, Bot, Building2, ChevronDown, ScanLine, Database, ShieldCheck, Layers, FolderOpen, ShieldAlert, type LucideIcon } from 'lucide-react'
+import { KeyRound, ClipboardCheck, ScrollText, Settings, LogOut, Shield, Bot, Building2, ChevronDown, ScanLine, Database, ShieldCheck, Layers, FolderOpen, ShieldAlert, LayoutDashboard, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 // IA modeled on the entity-first sidebars of Vault UI (Secrets/Access/Tools),
@@ -14,6 +14,7 @@ const navGroups: { label: string; items: { href: string; label: string; icon: Lu
   {
     label: 'Day-to-day',
     items: [
+      { href: '/overview', label: 'Overview', icon: LayoutDashboard },
       { href: '/secrets', label: 'Secrets', icon: KeyRound },
       { href: '/approvals', label: 'Approvals', icon: ClipboardCheck },
     ],
