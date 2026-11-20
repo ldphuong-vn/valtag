@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { KeyRound, ClipboardCheck, ScrollText, Settings, LogOut, Shield, Bot, Building2, ChevronDown, ScanLine, Database, ShieldCheck, Layers, FolderOpen, ShieldAlert, LayoutDashboard, type LucideIcon } from 'lucide-react'
+import { KeyRound, ClipboardCheck, ScrollText, Settings, LogOut, Shield, Bot, Building2, ChevronDown, ScanLine, Database, ShieldCheck, FolderOpen, ShieldAlert, LayoutDashboard, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 // IA modeled on the entity-first sidebars of Vault UI (Secrets/Access/Tools),
@@ -136,43 +136,38 @@ export default function Sidebar() {
         <span className="font-semibold text-sm">valtag</span>
       </div>
 
-      {/* Org/Workspace context */}
-      <div className="px-3 py-3 border-b space-y-1">
+      {/* Org/Workspace context — one compact line: the workspace name lives
+          inside the Organizations entry so the whole sidebar fits a short
+          viewport without scrolling (anh, 2026-11-21). */}
+      <div className="px-3 py-2.5 border-b">
         <Link
           href="/orgs"
-          className="flex items-center gap-2 px-2 py-1.5 rounded-md text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex items-center gap-2 rounded-md bg-accent/50 px-2 py-2 hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <Building2 className="w-4 h-4 shrink-0" />
-          <span className="truncate flex-1 text-left">Organizations</span>
+          <Building2 className="w-4 h-4 shrink-0 text-muted-foreground" />
+          <span className="min-w-0 flex-1 leading-tight">
+            <span className="block truncate text-xs font-semibold">Organizations</span>
+            {workspaceName && (
+              <span className="block truncate text-[11px] font-medium text-primary">{workspaceName}</span>
+            )}
+          </span>
           <ChevronDown className="w-3.5 h-3.5 shrink-0 opacity-50" />
         </Link>
-
-        {workspaceName ? (
-          <div className="flex items-center gap-2 px-2 py-1.5 rounded-md text-sm font-semibold bg-accent/50 text-foreground">
-            <Layers className="w-4 h-4 shrink-0 text-primary" />
-            <span className="truncate">{workspaceName}</span>
-          </div>
-        ) : (
-          <div className="flex items-start gap-2 px-2 py-2 mt-1 rounded-md text-xs bg-amber-500/10 text-amber-600 border border-amber-500/20">
-            <Layers className="w-4 h-4 shrink-0 mt-0.5" />
-            <span className="leading-tight">No workspace selected. Go to Organizations to pick one.</span>
-          </div>
-        )}
       </div>
 
-      <nav className="flex-1 p-3 overflow-y-auto space-y-4">
+      <nav className="flex-1 px-3 py-3 overflow-y-auto space-y-3">
         {groups.map(group => (
           <div key={group.label}>
-            <div className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+            <div className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
               {group.label}
             </div>
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               {group.items.map(({ href, label, icon: Icon }) => (
                 <Link
                   key={`${href}-${label}`}
                   href={href}
                   className={cn(
-                    'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                    'flex items-center gap-3 px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
                     (label === 'Policies' ? pathname.includes('/policies') : pathname.startsWith(href))
                       ? 'bg-primary/10 text-primary'
                       : 'text-muted-foreground hover:bg-accent hover:text-foreground',
@@ -187,25 +182,27 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      <div className="p-3 border-t space-y-1">
+      {/* Admin + Sign out share one icon row to keep the sidebar scroll-free;
+          the title attribute shows the label on hover. */}
+      <div className="px-3 py-2.5 border-t flex items-center gap-1">
         <Link
           href="/admin"
+          title="Admin"
           className={cn(
-            'flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors',
+            'flex-1 h-9 rounded-md grid place-items-center transition-colors',
             pathname.startsWith('/admin')
               ? 'bg-primary/10 text-primary'
               : 'text-muted-foreground hover:bg-accent hover:text-foreground',
           )}
         >
-          <ShieldAlert className="w-4 h-4 shrink-0" />
-          Admin
+          <ShieldAlert className="w-4 h-4" />
         </Link>
         <button
           onClick={handleLogout}
-          className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors w-full text-left"
+          title="Sign out"
+          className="flex-1 h-9 rounded-md grid place-items-center text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
         >
-          <LogOut className="w-4 h-4 shrink-0" />
-          Sign out
+          <LogOut className="w-4 h-4" />
         </button>
       </div>
     </aside>
