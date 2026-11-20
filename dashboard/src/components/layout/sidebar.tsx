@@ -51,6 +51,58 @@ export default function Sidebar() {
   const pathname = usePathname()
   const [policyHref, setPolicyHref] = useState('/projects')
   const [workspaceName, setWorkspaceName] = useState<string | null>(null)
+  // Org switcher: every org the user belongs to, selectable straight from the
+  // sidebar (previously the entry was just a link — creating a second org
+  // gave it nowhere to appear).
+  const [orgsOpen, setOrgsOpen] = useState(false)
+  const [orgs, setOrgs] = useState<{ id: string; name: string }[] | null>(null)
+  const [currentOrgId, setCurrentOrgId] = useState('')
+  const [switching, setSwitching] = useState(false)
+
+  async function loadOrgs() {
+    try {
+      const res = await fetch('/api/proxy/orgs', { credentials: 'include' })
+      const data = await res.json()
+      const list = Array.isArray(data) ? data : (data.orgs ?? [])
+      setOrgs(list.map((o: { id: string; name?: string }) => ({ id: o.id, name: o.name ?? o.id })))
+    } catch {
+      setOrgs([])
+    }
+  }
+
+  async function selectOrg(orgId: string) {
+    if (switching) return
+    setOrgsOpen(false)
+    if (orgId === localStorage.getItem('valt_current_org')) return
+    setSwitching(true)
+    try {
+      localStorage.setItem('valt_current_org', orgId)
+      const wsRes = await fetch(`/api/proxy/orgs/${orgId}/workspaces`, { credentials: 'include' })
+      const wsData = await wsRes.json()
+      const workspaces = Array.isArray(wsData) ? wsData : (wsData.workspaces ?? [])
+      const ws = workspaces[0]
+      if (ws) {
+        localStorage.setItem('valt_current_workspace', ws.id as string)
+        localStorage.setItem('valt_current_workspace_name', (ws.name ?? 'Workspace') as string)
+      } else {
+        localStorage.removeItem('valt_current_workspace')
+        localStorage.removeItem('valt_current_workspace_name')
+      }
+      if (ws) {
+        const projRes = await fetch(`/api/proxy/workspaces/${ws.id}/projects`, { credentials: 'include' })
+        const projData = await projRes.json()
+        const projects = Array.isArray(projData) ? projData : (projData.projects ?? [])
+        if (projects[0]?.id) localStorage.setItem('valt_current_project', projects[0].id as string)
+        else localStorage.removeItem('valt_current_project')
+      } else {
+        localStorage.removeItem('valt_current_project')
+      }
+      window.dispatchEvent(new Event('valtag:workspace-changed'))
+      window.dispatchEvent(new Event('valtag:project-changed'))
+    } finally {
+      setSwitching(false)
+    }
+  }
 
   useEffect(() => {
     const updateHref = () => {
@@ -60,6 +112,7 @@ export default function Sidebar() {
       const wsId = localStorage.getItem('valt_current_workspace')
       const wsName = localStorage.getItem('valt_current_workspace_name')
       setWorkspaceName(wsId ? (wsName || 'Workspace selected') : null)
+      setCurrentOrgId(localStorage.getItem('valt_current_org') ?? '')
     }
     updateHref()
     // Self-heal: a returning user whose localStorage was cleared (new browser,
@@ -136,23 +189,66 @@ export default function Sidebar() {
         <span className="font-semibold text-sm">valtag</span>
       </div>
 
-      {/* Org/Workspace context — one compact line: the workspace name lives
-          inside the Organizations entry so the whole sidebar fits a short
-          viewport without scrolling (anh, 2026-11-21). */}
+      {/* Org/Workspace context — compact line + org switcher dropdown. The
+          workspace name sits as a subtitle inside the entry; selecting an org
+          from the menu switches the whole context (workspace + project). */}
       <div className="px-3 py-2.5 border-b">
-        <Link
-          href="/orgs"
-          className="flex items-center gap-2 rounded-md bg-accent/50 px-2 py-2 hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <Building2 className="w-4 h-4 shrink-0 text-muted-foreground" />
-          <span className="min-w-0 flex-1 leading-tight">
-            <span className="block truncate text-xs font-semibold">Organizations</span>
-            {workspaceName && (
-              <span className="block truncate text-[11px] font-medium text-primary">{workspaceName}</span>
-            )}
-          </span>
-          <ChevronDown className="w-3.5 h-3.5 shrink-0 opacity-50" />
-        </Link>
+        <div className="relative">
+          <button
+            onClick={() => { setOrgsOpen(v => { if (!v) void loadOrgs(); return !v }); setCurrentOrgId(localStorage.getItem('valt_current_org') ?? '') }}
+            className="w-full flex items-center gap-2 rounded-md bg-accent/50 px-2 py-2 hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring text-left"
+          >
+            <Building2 className="w-4 h-4 shrink-0 text-muted-foreground" />
+            <span className="min-w-0 flex-1 leading-tight">
+              <span className="block truncate text-xs font-semibold">Organizations</span>
+              {workspaceName && (
+                <span className="block truncate text-[11px] font-medium text-primary">{workspaceName}</span>
+              )}
+            </span>
+            <ChevronDown className={cn('w-3.5 h-3.5 shrink-0 opacity-50 transition-transform', orgsOpen && 'rotate-180')} />
+          </button>
+
+          {orgsOpen && (
+            <>
+              {/* click-outside backdrop */}
+              <button
+                aria-hidden
+                onClick={() => setOrgsOpen(false)}
+                className="fixed inset-0 z-40 cursor-default"
+              />
+              <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-lg border bg-popover shadow-lg p-1.5">
+                {switching ? (
+                  <div className="px-2 py-2 text-xs text-muted-foreground">Switching context…</div>
+                ) : orgs === null ? (
+                  <div className="px-2 py-2 text-xs text-muted-foreground">Loading…</div>
+                ) : orgs.length === 0 ? (
+                  <div className="px-2 py-2 text-xs text-muted-foreground">No organizations yet.</div>
+                ) : (
+                  orgs.map(o => (
+                    <button
+                      key={o.id}
+                      onClick={() => void selectOrg(o.id)}
+                      className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent transition-colors text-left"
+                    >
+                      <span className={cn('w-2 h-2 rounded-full shrink-0', o.id === currentOrgId ? 'bg-green-500' : 'bg-transparent border border-muted-foreground/40')} />
+                      <span className="truncate flex-1">{o.name}</span>
+                      {o.id === currentOrgId && <span className="text-[10px] text-muted-foreground">current</span>}
+                    </button>
+                  ))
+                )}
+                <div className="my-1 h-px bg-border" />
+                <Link
+                  href="/orgs"
+                  onClick={() => setOrgsOpen(false)}
+                  className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-primary hover:bg-accent transition-colors"
+                >
+                  <Building2 className="w-4 h-4 shrink-0" />
+                  Manage organizations…
+                </Link>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       <nav className="flex-1 px-3 py-3 overflow-y-auto space-y-3">
