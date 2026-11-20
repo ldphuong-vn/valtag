@@ -1,18 +1,33 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 import { api } from '@/lib/api-client'
 import type { DynamicProvider } from '@/types/api'
 import { CreateProviderForm } from './create-provider-form'
 
-const DEFAULT_PROJECT_ID = ''
+// Providers live inside a project; follow the app-wide "current project"
+// (localStorage `valt_current_project`, set on the Projects page).
+const readProjectId = () =>
+  typeof window === 'undefined' ? '' : localStorage.getItem('valt_current_project') ?? ''
 
 export default function ProvidersPage() {
   const [providers, setProviders] = useState<DynamicProvider[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
-  const [projectId] = useState(DEFAULT_PROJECT_ID)
+  const [projectId, setProjectId] = useState(readProjectId)
+
+  useEffect(() => {
+    const sync = () => setProjectId(readProjectId())
+    sync()
+    window.addEventListener('valtag:project-changed', sync)
+    window.addEventListener('storage', sync)
+    return () => {
+      window.removeEventListener('valtag:project-changed', sync)
+      window.removeEventListener('storage', sync)
+    }
+  }, [])
 
   const fetchProviders = useCallback(async () => {
     if (!projectId) {
@@ -63,7 +78,7 @@ export default function ProvidersPage() {
 
       {showForm && !projectId && (
         <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          Project ID is required. Set it in URL or settings.
+          No project selected. <Link href="/projects" className="underline">Pick a project</Link> first — providers are created inside a project.
         </div>
       )}
 
@@ -77,6 +92,10 @@ export default function ProvidersPage() {
 
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading providers…</p>
+      ) : !projectId ? (
+        <div className="rounded-lg border bg-card p-10 text-center text-sm text-muted-foreground">
+          No project selected. <Link href="/projects" className="underline text-primary hover:underline">Pick a project</Link> to see its providers.
+        </div>
       ) : providers.length === 0 ? (
         <div className="rounded-lg border bg-card p-10 text-center text-sm text-muted-foreground">
           No providers configured. Add one to start generating dynamic credentials.
