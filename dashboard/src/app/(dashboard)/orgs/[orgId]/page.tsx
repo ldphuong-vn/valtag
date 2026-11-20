@@ -200,39 +200,3 @@ export default function WorkspaceListPage() {
     </div>
   )
 }
-        <ul className="space-y-4">
-          {workspaces.map(ws => (
-            <li key={ws.id} className="p-5 border rounded-lg bg-card hover:border-primary/30 transition-colors shadow-sm">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                    <Layers className="w-6 h-6 text-primary" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-base font-semibold truncate">{ws.name}</h3>
-                      {currentWorkspaceId === ws.id && (
-                        <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-200">
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Current
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm text-muted-foreground font-mono mt-1">{ws.slug}</p>
-                  </div>
-                </div>
-                
-                <button
-                  onClick={() => selectWorkspace(ws.id, ws.name)}
-                  disabled={currentWorkspaceId === ws.id}
-                  className="px-4 py-2 min-h-[44px] min-w-[140px] flex items-center justify-center rounded-md border text-sm font-medium hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-full sm:w-auto"
-                >
-                  {currentWorkspaceId === ws.id ? 'Current Workspace' : 'Set current'}
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  )
-}
