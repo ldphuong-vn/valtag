@@ -145,6 +145,7 @@ export const api = {
       const data = await apiFetch<{ projects: Project[] } | Project[]>(`/workspaces/${workspaceId}/projects`)
       return Array.isArray(data) ? { projects: data } : { projects: data.projects ?? [] }
     },
+    get: (projectId: string) => apiFetch<Project>(`/projects/${projectId}`),
     create: (workspaceId: string, body: { name: string; slug: string }) =>
       apiFetch<Project>(`/workspaces/${workspaceId}/projects`, { method: 'POST', body: JSON.stringify(body) }),
     getMembers: (projectId: string) =>

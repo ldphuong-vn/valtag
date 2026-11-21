@@ -24,6 +24,8 @@ export default function PolicyTemplatesPage({ projectId, currentUserId }: Props)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [role, setRole] = useState('viewer')
+  const [projectName, setProjectName] = useState('')
+  const [projectSlug, setProjectSlug] = useState('')
   const [open, setOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [versions, setVersions] = useState<PolicyTemplateVersion[]>([])
@@ -46,6 +48,11 @@ export default function PolicyTemplatesPage({ projectId, currentUserId }: Props)
         api.projects.getMembers(projectId),
       ])
       setTemplates(tplRes.templates ?? [])
+      // mapping: name the project this policy set belongs to (breadcrumb)
+      api.projects.get(projectId).then(p => {
+        setProjectName(p?.name ?? '')
+        setProjectSlug(p?.slug ?? '')
+      }).catch(() => {})
       // server ListMembers returns a bare array; tolerate the {members} wrapper too
       const memberList: ProjectMembership[] = Array.isArray(membersRes)
         ? membersRes
@@ -123,12 +130,21 @@ export default function PolicyTemplatesPage({ projectId, currentUserId }: Props)
 
   return (
     <div className="space-y-4">
-      {/* Breadcrumb: policies belong to a project — make the relation visible */}
-      <div className="text-sm text-muted-foreground flex items-center gap-1.5">
+      {/* Breadcrumb: policies belong to a project — show the project NAME,
+          not just the id hash (anh couldn't tell which project, 2026-11-21) */}
+      <div className="text-sm text-muted-foreground flex items-center gap-1.5 flex-wrap">
         <Link href="/projects" className="hover:text-foreground transition-colors">Projects</Link>
         <span>/</span>
+        {projectName ? (
+          <>
+            <span className="text-foreground font-medium">{projectName}</span>
+            {projectSlug && <span className="font-mono text-xs text-muted-foreground/70">{projectSlug}</span>}
+          </>
+        ) : (
+          <span className="font-mono text-xs">{projectId.slice(0, 8)}…</span>
+        )}
+        <span>/</span>
         <span className="text-foreground font-medium">Policies</span>
-        <span className="font-mono text-xs text-muted-foreground/70">({projectId.slice(0, 8)}…)</span>
         <Link href="/secrets" className="ml-auto text-primary hover:underline">Secrets of this project →</Link>
       </div>
       <div className="flex items-center justify-between">
