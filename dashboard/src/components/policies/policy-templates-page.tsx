@@ -9,7 +9,7 @@ import type { PolicyParameters, PolicyTemplate, PolicyTemplateVersion, ProjectMe
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import { defaultPolicy } from './policy-helpers'
 import { PolicyTemplateEditorDialog } from './policy-template-editor-dialog'
 import { PolicyTemplateHistoryDialog } from './policy-template-history-dialog'
@@ -160,12 +160,16 @@ export default function PolicyTemplatesPage({ projectId, currentUserId }: Props)
           <p className="text-sm text-muted-foreground">Rules applied when an agent asks for a bound secret — reason, max duration, cooldowns, auto-approve tiers.</p>
         </div>
         <div className="flex items-center gap-3">
-          {/* project switcher — compare policies across projects without a detour */}
+          {/* project switcher — compare policies across projects without a detour.
+              NOTE: the repo's custom Select shows SelectValue = the raw value, so
+              the trigger renders the project name explicitly. */}
           {siblings.length > 1 && (
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">Project:</span>
               <Select value={projectId} onValueChange={id => { if (id !== projectId) router.push(`/projects/${id}/policies`) }}>
-                <SelectTrigger className="h-9 w-[180px] text-sm"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-9 w-[190px] text-sm">
+                  <span className="truncate">{siblings.find(p => p.id === projectId)?.name ?? projectId.slice(0, 8)}</span>
+                </SelectTrigger>
                 <SelectContent>
                   {siblings.map(p => (
                     <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
