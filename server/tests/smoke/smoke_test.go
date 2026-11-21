@@ -121,23 +121,33 @@ func TestSmoke(t *testing.T) {
 
 	var secretID string
 	var projectID string
-	t.Run("04 create org, workspace and project", func(t *testing.T) {
-		resp := client.call(t, http.MethodPost, "/api/v1/orgs", map[string]string{
-			"name": "Smoke Org", "slug": fmt.Sprintf("smoke-%d", time.Now().UnixNano()),
-		}, http.StatusCreated)
-		orgID := str(resp, "id")
+	t.Run("04 use the auto-created org, create workspace and project", func(t *testing.T) {
+		// Register auto-creates a "Default" org + workspace for the new user
+		// (auth/handler.go) and the single-org policy (2026-11-21) makes that
+		// the user's one and only org — the smoke flow works inside it instead
+		// of creating a second one (which now correctly 409s).
+		resp := client.call(t, http.MethodGet, "/api/v1/orgs", nil, http.StatusOK)
+		var orgID string
+		if orgsRaw, ok := resp["orgs"].([]interface{}); ok {
+			for _, o := range orgsRaw {
+				if om, ok := o.(map[string]interface{}); ok {
+					orgID, _ = om["id"].(string)
+					break
+				}
+			}
+		}
 		if orgID == "" {
-			t.Fatal("org create returned no id")
+			t.Fatal("register did not provide a default org")
 		}
 		resp = client.call(t, http.MethodPost, "/api/v1/orgs/"+orgID+"/workspaces", map[string]string{
-			"name": "Smoke WS", "slug": "smoke-ws",
+			"name": "Smoke WS", "slug": fmt.Sprintf("smoke-ws-%d", time.Now().UnixNano()),
 		}, http.StatusCreated)
 		workspaceID := str(resp, "id")
 		if workspaceID == "" {
 			t.Fatal("workspace create returned no id")
 		}
 		resp = client.call(t, http.MethodPost, "/api/v1/workspaces/"+workspaceID+"/projects", map[string]string{
-			"name": "Smoke Project", "slug": "smoke-project",
+			"name": "Smoke Project", "slug": fmt.Sprintf("smoke-project-%d", time.Now().UnixNano()),
 		}, http.StatusCreated)
 		projectID = str(resp, "id")
 		if projectID == "" {
