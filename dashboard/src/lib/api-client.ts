@@ -129,6 +129,10 @@ export const api = {
       apiFetch<Organization>('/orgs', { method: 'POST', body: JSON.stringify(body) }),
     getMembers: (orgId: string) =>
       apiFetch<{ members: OrgMembership[] }>(`/orgs/${orgId}/members`),
+    invite: (orgId: string, body: { email: string; role: string }) =>
+      apiFetch<{ invitation: Record<string, unknown>; invite_url: string }>(`/orgs/${orgId}/invitations`, { method: 'POST', body: JSON.stringify(body) }),
+    getInvite: (token: string) =>
+      apiFetch<{ org_name: string; email: string; role: string }>(`/orgs/invitations/${token}`),
     addMember: (orgId: string, body: { user_id: string; role: string }) =>
       apiFetch<OrgMembership>(`/orgs/${orgId}/members`, { method: 'POST', body: JSON.stringify(body) }),
   },

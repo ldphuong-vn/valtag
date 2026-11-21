@@ -31,6 +31,11 @@ type Config struct {
 	SMTPPassword string `envconfig:"SMTP_PASSWORD" default:""`
 	SMTPFrom     string `envconfig:"SMTP_FROM" default:"noreply@valt.dev"`
 
+	// Registration gate (2026-11-21, single-org policy): closed by default —
+	// the first account claims the instance at setup; REGISTRATION_MODE=open
+	// lets anyone sign up and get their own org. Members join by invitation.
+	RegistrationMode string `envconfig:"REGISTRATION_MODE" default:"closed"`
+
 	// Google OAuth
 	GoogleClientID     string `envconfig:"GOOGLE_CLIENT_ID" default:""`
 	GoogleClientSecret string `envconfig:"GOOGLE_CLIENT_SECRET" default:""`

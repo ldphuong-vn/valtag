@@ -178,8 +178,8 @@ func (h *Handler) createInvitation(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Send invite email (best-effort; nil sender is a no-op).
+	inviteURL := fmt.Sprintf("%s/accept-invite?token=%s", h.dashboardURL, raw)
 	if h.emailSender != nil {
-		inviteURL := fmt.Sprintf("%s/accept-invite?token=%s", h.dashboardURL, raw)
 		body := buildInviteEmail(o.Name, inviteURL)
 		if emailErr := h.emailSender.Send(r.Context(), req.Email,
 			fmt.Sprintf("You're invited to join %s on valtag", o.Name), body); emailErr != nil {
@@ -190,7 +190,48 @@ func (h *Handler) createInvitation(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(inv) //nolint:errcheck
+	// The raw invite URL goes back to the admin caller (invite-only
+	// deployments without SMTP need it to hand the link over out of band).
+	json.NewEncoder(w).Encode(map[string]interface{}{ //nolint:errcheck
+		"invitation": inv,
+		"invite_url": inviteURL,
+	})
+}
+
+// getInvitationByToken handles GET /orgs/invitations/{token} — public lookup
+// for the accept-invite page (org name, invited email, role; no secrets).
+func (h *Handler) getInvitationByToken(w http.ResponseWriter, r *http.Request) {
+	token := chi.URLParam(r, "token")
+	sum := sha256.Sum256([]byte(token))
+	hash := hex.EncodeToString(sum[:])
+
+	var orgName, email, role, status string
+	var expiresAt time.Time
+	err := h.service.pool.QueryRow(r.Context(), `
+		SELECT o.name, i.email, i.role, i.status, i.expires_at
+		FROM org_invitations i JOIN organizations o ON o.id = i.org_id
+		WHERE i.token_hash = $1`, hash,
+	).Scan(&orgName, &email, &role, &status, &expiresAt)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			apierror.NotFound(w, "invitation not found")
+			return
+		}
+		log.Printf("org invitation: public lookup: %v", err)
+		apierror.InternalError(w, "failed to look up invitation")
+		return
+	}
+	if status != "pending" || time.Now().After(expiresAt) {
+		apierror.BadRequest(w, "invitation has expired or was already used")
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{ //nolint:errcheck
+		"org_name": orgName,
+		"email":    email,
+		"role":     role,
+	})
 }
 
 // listInvitations handles GET /orgs/{org_id}/invitations.

@@ -25,10 +25,21 @@ function LoginForm() {
   const [totpRequired, setTotpRequired] = useState(false)
   const [totpToken, setTotpToken] = useState('')
   const [totpCode, setTotpCode] = useState('')
+  const [inviteToken, setInviteToken] = useState<string | null>(null)
+  const [invitedEmail, setInvitedEmail] = useState('')
 
   useEffect(() => {
     if (searchParams.get('reset') === 'success') {
       setInfo('Password reset successful. You can now sign in with your new password.')
+    }
+    // Invitation flow: prefill the invited email, force register mode.
+    const invite = searchParams.get('invite')
+    const invitedEmail = searchParams.get('email')
+    if (invite) {
+      setInviteToken(invite)
+      setMode('register')
+      if (invitedEmail) setEmail(invitedEmail)
+      setInfo('You were invited — create your account to join the organization.')
     }
   }, [searchParams])
 
@@ -41,7 +52,10 @@ function LoginForm() {
     try {
       const endpoint = mode === 'register' ? '/api/v1/auth/register' : '/api/v1/auth/login'
       const body: Record<string, string> = { email, password }
-      if (mode === 'register') body.region_code = 'vn'
+      if (mode === 'register') {
+        body.region_code = 'vn'
+        if (inviteToken) body.invite_token = inviteToken
+      }
 
       const res = await fetch(endpoint, {
         method: 'POST',

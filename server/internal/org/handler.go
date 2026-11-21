@@ -42,6 +42,8 @@ func (h *Handler) Routes() chi.Router {
 	// Creating an org and listing one's own orgs are user-scoped — no org check.
 	r.Post("/", h.createOrg)
 	r.Get("/", h.listOrgs)
+	// Public: accept-invite page lookup (token identifies the invitation).
+	r.Get("/invitations/{token}", h.getInvitationByToken)
 
 	// Everything below the {org_id} prefix requires org membership;
 	// mutations require org admin (invitation management included —

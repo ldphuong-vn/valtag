@@ -34,6 +34,7 @@ type EmailSender interface {
 type Handler struct {
 	pool              *pgxpool.Pool
 	jwtMgr            *JWTManager
+	cfg               *config.Config
 	oauthConfig       *oauth2.Config
 	dashboardURL      string
 	cliSessionHandler *CLISessionHandler
@@ -55,6 +56,7 @@ func NewHandler(pool *pgxpool.Pool, jwtMgr *JWTManager, cfg *config.Config) *Han
 	return &Handler{
 		pool:              pool,
 		jwtMgr:            jwtMgr,
+		cfg:               cfg,
 		oauthConfig:       oauthCfg,
 		dashboardURL:      cfg.DashboardURL,
 		cliSessionHandler: cliHandler,
@@ -122,9 +124,10 @@ func (h *Handler) Routes() chi.Router {
 // --- Request / Response types ---
 
 type registerRequest struct {
-	Email      string `json:"email"`
-	Password   string `json:"password"`
-	RegionCode string `json:"region_code"`
+	Email       string `json:"email"`
+	Password    string `json:"password"`
+	RegionCode  string `json:"region_code"`
+	InviteToken string `json:"invite_token,omitempty"`
 }
 
 type loginRequest struct {
@@ -165,6 +168,20 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Registration gate (claim-first-boot, anh chốt 2026-11-21): an empty
+	// instance lets the first signup claim it regardless of mode; afterwards
+	// only REGISTRATION_MODE=open accepts signups — closed instances grow by
+	// invitation (a pending invitation token for the email passes the gate).
+	var userCount int
+	if err := h.pool.QueryRow(r.Context(), `SELECT COUNT(*) FROM users`).Scan(&userCount); err != nil {
+		apierror.InternalError(w, "failed to check registration")
+		return
+	}
+	if userCount > 0 && h.cfg.RegistrationMode != "open" && req.InviteToken == "" {
+		apierror.Forbidden(w, "this instance is private — accounts are created by invitation from the operator")
+		return
+	}
+
 	hash, err := HashPassword(req.Password)
 	if err != nil {
 		log.Printf("auth: hash password: %v", err)
@@ -190,8 +207,26 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Auto-create default org + workspace for new user (fire-and-forget on failure).
-	h.autoCreateOrgAndWorkspace(r.Context(), userID, req.Email)
+	// Invitation path: a valid pending invitation joins the inviter's org and
+	// skips the auto-org (single-org policy). First-claim and open mode get
+	// the auto-org instead.
+	invited := false
+	if req.InviteToken != "" && userCount > 0 {
+		joined, err := h.acceptInviteForNewUser(r.Context(), req.InviteToken, userID, req.Email)
+		if err != nil {
+			log.Printf("auth: register with invitation: %v", err)
+			// The user row was already created — clean it up so the invitee
+			// can retry registration with a corrected invitation.
+			_, _ = h.pool.Exec(r.Context(), `DELETE FROM users WHERE id = $1`, userID)
+			apierror.BadRequest(w, "invitation is invalid, expired, or for a different email")
+			return
+		}
+		invited = joined
+	}
+	if !invited {
+		// Auto-create default org + workspace for new user (fire-and-forget on failure).
+		h.autoCreateOrgAndWorkspace(r.Context(), userID, req.Email)
+	}
 
 	// Send verification email (non-blocking: log failure but don't fail registration).
 	if err := h.sendVerificationEmail(r.Context(), userID, req.Email); err != nil {
