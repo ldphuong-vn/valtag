@@ -70,7 +70,17 @@ export default function OverviewPage() {
       } catch { if (alive) setVerifyHidden(true) }
     }
     void load()
-    return () => { alive = false }
+    // context switch from the sidebar must refresh every number on this page
+    const reload = () => { alive = true; void load() }
+    window.addEventListener('valtag:project-changed', reload)
+    window.addEventListener('valtag:workspace-changed', reload)
+    window.addEventListener('storage', reload)
+    return () => {
+      alive = false
+      window.removeEventListener('valtag:project-changed', reload)
+      window.removeEventListener('valtag:workspace-changed', reload)
+      window.removeEventListener('storage', reload)
+    }
   }, [])
 
   const stat = (label: string, value: string | number | null, href: string, accent: string) => (

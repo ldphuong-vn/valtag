@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { Copy, History, Plus } from 'lucide-react'
 import { api } from '@/lib/api-client'
 import type { PolicyParameters, PolicyTemplate, PolicyTemplateVersion, ProjectMembership } from '@/types/api'
@@ -122,10 +123,18 @@ export default function PolicyTemplatesPage({ projectId, currentUserId }: Props)
 
   return (
     <div className="space-y-4">
+      {/* Breadcrumb: policies belong to a project — make the relation visible */}
+      <div className="text-sm text-muted-foreground flex items-center gap-1.5">
+        <Link href="/projects" className="hover:text-foreground transition-colors">Projects</Link>
+        <span>/</span>
+        <span className="text-foreground font-medium">Policies</span>
+        <span className="font-mono text-xs text-muted-foreground/70">({projectId.slice(0, 8)}…)</span>
+        <Link href="/secrets" className="ml-auto text-primary hover:underline">Secrets of this project →</Link>
+      </div>
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold">Policy templates</h2>
-          <p className="text-sm text-muted-foreground">Manage reusable access policy templates for this project.</p>
+          <p className="text-sm text-muted-foreground">Rules applied when an agent asks for a bound secret — reason, max duration, cooldowns, auto-approve tiers.</p>
         </div>
         <Button onClick={openCreate} disabled={!canManage}><Plus className="w-4 h-4 mr-2" />New template</Button>
       </div>

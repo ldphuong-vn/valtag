@@ -13,15 +13,28 @@ export default function ScansPage() {
   const [showInfo, setShowInfo] = useState(false)
 
   useEffect(() => {
-    const pid = typeof window !== 'undefined' ? localStorage.getItem('valt_current_project') : null
-    setProjectId(pid)
-    if (pid) {
-      api.scans.list(pid)
-        .then(r => setScans(r.scans ?? []))
-        .catch(() => setScans([]))
-        .finally(() => setLoading(false))
-    } else {
-      setLoading(false)
+    // reload on context change (same pattern as Agents/Providers)
+    const load = () => {
+      const pid = typeof window !== 'undefined' ? localStorage.getItem('valt_current_project') : null
+      setProjectId(pid)
+      if (pid) {
+        api.scans.list(pid)
+          .then(r => setScans(r.scans ?? []))
+          .catch(() => setScans([]))
+          .finally(() => setLoading(false))
+      } else {
+        setScans([])
+        setLoading(false)
+      }
+    }
+    load()
+    window.addEventListener('valtag:project-changed', load)
+    window.addEventListener('valtag:workspace-changed', load)
+    window.addEventListener('storage', load)
+    return () => {
+      window.removeEventListener('valtag:project-changed', load)
+      window.removeEventListener('valtag:workspace-changed', load)
+      window.removeEventListener('storage', load)
     }
   }, [])
 

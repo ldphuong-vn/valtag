@@ -39,12 +39,24 @@ async function tryRefresh(): Promise<boolean> {
   }
 }
 
+// Build a query string, silently dropping empty params — URLSearchParams
+// would otherwise serialize undefined as the literal string "undefined"
+// (bug 2026-11-21: admin.users({search: undefined}) filtered
+// email ILIKE '%undefined%' and returned zero users).
+function toQuery(params?: Record<string, string | number | undefined>): string {
+  if (!params) return ''
+  const q = new URLSearchParams()
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null && value !== '') q.set(key, String(value))
+  }
+  return q.toString()
+}
+
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     ...options,
     headers: { 'Content-Type': 'application/json', ...options?.headers },
   })
-
   if (res.status === 401) {
     // Try silent refresh once before redirecting to login.
     const refreshed = await tryRefresh()
@@ -104,7 +116,7 @@ export const api = {
   },
   audit: {
     list: (params?: { page?: number; limit?: number }) => {
-      const q = new URLSearchParams(params as Record<string, string>).toString()
+      const q = toQuery(params)
       return apiFetch<{ logs: AuditLog[] }>(`/audit/logs${q ? `?${q}` : ''}`)
     },
   },
@@ -277,7 +289,7 @@ export const api = {
         }>
       }>('/admin/leases'),
     users: (params?: { page?: number; limit?: number; search?: string }) => {
-      const q = new URLSearchParams(params as Record<string, string>).toString()
+      const q = toQuery(params)
       return apiFetch<{
         users: Array<{
           id: string
@@ -293,7 +305,7 @@ export const api = {
       }>(`/admin/users${q ? `?${q}` : ''}`)
     },
     orgs: (params?: { page?: number; limit?: number }) => {
-      const q = new URLSearchParams(params as Record<string, string>).toString()
+      const q = toQuery(params)
       return apiFetch<{
         orgs: Array<{
           id: string

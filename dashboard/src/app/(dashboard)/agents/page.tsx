@@ -21,15 +21,29 @@ export default function AgentsPage() {
   const [form, setForm] = useState<CreateForm>(DEFAULT_FORM)
 
   useEffect(() => {
-    const pid = typeof window !== 'undefined' ? localStorage.getItem('valt_current_project') : null
-    setProjectId(pid)
-    if (pid) {
-      api.agents.list(pid)
-        .then(r => setAgents(r.agents ?? []))
-        .catch(() => setAgents([]))
-        .finally(() => setLoading(false))
-    } else {
-      setLoading(false)
+    // reload on context change — switching org/workspace from the sidebar must
+    // refresh this list (it reads valt_current_project)
+    const load = () => {
+      const pid = typeof window !== 'undefined' ? localStorage.getItem('valt_current_project') : null
+      setProjectId(pid)
+      if (pid) {
+        api.agents.list(pid)
+          .then(r => setAgents(r.agents ?? []))
+          .catch(() => setAgents([]))
+          .finally(() => setLoading(false))
+      } else {
+        setAgents([])
+        setLoading(false)
+      }
+    }
+    load()
+    window.addEventListener('valtag:project-changed', load)
+    window.addEventListener('valtag:workspace-changed', load)
+    window.addEventListener('storage', load)
+    return () => {
+      window.removeEventListener('valtag:project-changed', load)
+      window.removeEventListener('valtag:workspace-changed', load)
+      window.removeEventListener('storage', load)
     }
   }, [])
 
