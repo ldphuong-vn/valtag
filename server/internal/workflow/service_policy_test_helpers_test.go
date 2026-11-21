@@ -22,7 +22,7 @@ func seedWorkflowPolicyData(t *testing.T, ctx context.Context, pool *pgxpool.Poo
 	}{
 		{query: `INSERT INTO users (id, email, password_hash) VALUES ($1, $2, $3)`, args: []any{ownerID, "owner@example.com", "hash"}},
 		{query: `INSERT INTO users (id, email, password_hash) VALUES ($1, $2, $3)`, args: []any{requesterID, "requester@example.com", "hash"}},
-		{query: `INSERT INTO organizations (id, name, slug, owner_id, plan) VALUES ($1, $2, $3, $4, $5)`, args: []any{"00000000-0000-0000-0000-000000000401", "Org", "org-workflow", ownerID, "free"}},
+		{query: `INSERT INTO organizations (id, name, slug, owner_id) VALUES ($1, $2, $3, $4, $5)`, args: []any{"00000000-0000-0000-0000-000000000401", "Org", "org-workflow", ownerID}},
 		{query: `INSERT INTO workspaces (id, org_id, name, slug) VALUES ($1, $2, $3, $4)`, args: []any{"00000000-0000-0000-0000-000000000501", "00000000-0000-0000-0000-000000000401", "Workspace", "workspace-workflow"}},
 		{query: `INSERT INTO projects (id, workspace_id, name, slug) VALUES ($1, $2, $3, $4)`, args: []any{projectID, "00000000-0000-0000-0000-000000000501", "Project", "project-workflow"}},
 		{query: `INSERT INTO project_memberships (project_id, user_id, role) VALUES ($1, $2, $3)`, args: []any{projectID, ownerID, "owner"}},

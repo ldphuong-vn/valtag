@@ -232,7 +232,7 @@ func seedPolicyIntegrationData(t *testing.T, ctx context.Context, pool *pgxpool.
 	}{
 		{query: `INSERT INTO users (id, email, password_hash) VALUES ($1, $2, $3)`, args: []any{"00000000-0000-0000-0000-000000000101", "owner@example.com", "hash"}},
 		{query: `INSERT INTO users (id, email, password_hash) VALUES ($1, $2, $3)`, args: []any{"00000000-0000-0000-0000-000000000102", "member@example.com", "hash"}},
-		{query: `INSERT INTO organizations (id, name, slug, owner_id, plan) VALUES ($1, $2, $3, $4, $5)`, args: []any{"00000000-0000-0000-0000-000000000401", "Org", "org-it", "00000000-0000-0000-0000-000000000101", "free"}},
+		{query: `INSERT INTO organizations (id, name, slug, owner_id) VALUES ($1, $2, $3, $4, $5)`, args: []any{"00000000-0000-0000-0000-000000000401", "Org", "org-it", "00000000-0000-0000-0000-000000000101"}},
 		{query: `INSERT INTO workspaces (id, org_id, name, slug) VALUES ($1, $2, $3, $4)`, args: []any{"00000000-0000-0000-0000-000000000501", "00000000-0000-0000-0000-000000000401", "Workspace", "workspace-it"}},
 		{query: `INSERT INTO projects (id, workspace_id, name, slug) VALUES ($1, $2, $3, $4)`, args: []any{"00000000-0000-0000-0000-000000000201", "00000000-0000-0000-0000-000000000501", "Project", "project-it"}},
 		{query: `INSERT INTO project_memberships (project_id, user_id, role) VALUES ($1, $2, $3)`, args: []any{"00000000-0000-0000-0000-000000000201", "00000000-0000-0000-0000-000000000101", "owner"}},

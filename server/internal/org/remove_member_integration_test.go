@@ -78,7 +78,7 @@ func seedRemoveMemberData(t *testing.T, ctx context.Context, pool *pgxpool.Pool)
 		{`INSERT INTO users (id, email, password_hash) VALUES ($1, $2, $3)`, []any{removeOwnerID, "org-owner@example.com", "hash"}},
 		{`INSERT INTO users (id, email, password_hash) VALUES ($1, $2, $3)`, []any{removeMemberID, "org-member@example.com", "hash"}},
 		{`INSERT INTO users (id, email, password_hash) VALUES ($1, $2, $3)`, []any{removeAdminID, "org-admin@example.com", "hash"}},
-		{`INSERT INTO organizations (id, name, slug, owner_id, plan) VALUES ($1, $2, $3, $4, $5)`, []any{removeOrgID, "Org", "org-remove", removeOwnerID, "free"}},
+		{`INSERT INTO organizations (id, name, slug, owner_id) VALUES ($1, $2, $3, $4, $5)`, []any{removeOrgID, "Org", "org-remove", removeOwnerID}},
 		{`INSERT INTO org_memberships (org_id, user_id, role) VALUES ($1, $2, $3)`, []any{removeOrgID, removeOwnerID, "owner"}},
 		{`INSERT INTO org_memberships (org_id, user_id, role) VALUES ($1, $2, $3)`, []any{removeOrgID, removeMemberID, "member"}},
 		{`INSERT INTO org_memberships (org_id, user_id, role) VALUES ($1, $2, $3)`, []any{removeOrgID, removeAdminID, "admin"}},
