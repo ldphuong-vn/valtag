@@ -172,12 +172,17 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 	// instance lets the first signup claim it regardless of mode; afterwards
 	// only REGISTRATION_MODE=open accepts signups — closed instances grow by
 	// invitation (a pending invitation token for the email passes the gate).
+	// An empty mode (Handler built in tests with a bare config) behaves open.
+	mode := h.cfg.RegistrationMode
+	if mode == "" {
+		mode = "open"
+	}
 	var userCount int
 	if err := h.pool.QueryRow(r.Context(), `SELECT COUNT(*) FROM users`).Scan(&userCount); err != nil {
 		apierror.InternalError(w, "failed to check registration")
 		return
 	}
-	if userCount > 0 && h.cfg.RegistrationMode != "open" && req.InviteToken == "" {
+	if userCount > 0 && mode != "open" && req.InviteToken == "" {
 		apierror.Forbidden(w, "this instance is private — accounts are created by invitation from the operator")
 		return
 	}
