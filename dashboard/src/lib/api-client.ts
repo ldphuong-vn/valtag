@@ -230,16 +230,6 @@ export const api = {
     disconnectSlack: (orgId: string) =>
       apiFetch<void>(`/integrations/slack?org_id=${orgId}`, { method: 'DELETE' }),
   },
-  billing: {
-    createCheckout: (body: { plan: string; success_url: string; cancel_url: string }) =>
-      apiFetch<{ url: string }>('/billing/checkout-session', { method: 'POST', body: JSON.stringify(body) }),
-    createPortal: (body: { return_url: string }) =>
-      apiFetch<{ url: string }>('/billing/portal', { method: 'POST', body: JSON.stringify(body) }),
-  },
-  usage: {
-    get: (orgId: string) =>
-      apiFetch<{ plan: string; usage: Record<string, number>; limits: Record<string, number> }>(`/orgs/${orgId}/usage`),
-  },
   scans: {
     list: (projectId: string) =>
       apiFetch<{ scans: ScanResult[] }>(`/projects/${projectId}/scans`),
@@ -279,7 +269,6 @@ export const api = {
       total_requests_today: number
       total_requests_all: number
       users_today: number
-      plan_distribution: Record<string, number>
     }>('/admin/stats'),
     leases: () =>
       apiFetch<{
@@ -318,7 +307,6 @@ export const api = {
           name: string
           slug: string
           owner_id: string
-          plan: string
           member_count: number
           secrets_count: number
           created_at: string
@@ -327,16 +315,6 @@ export const api = {
         limit: number
       }>(`/admin/orgs${q ? `?${q}` : ''}`)
     },
-    payments: () => apiFetch<{
-      payments: Array<{
-        org_id: string
-        org_name: string
-        plan: string
-        stripe_customer_id: string
-        stripe_subscription_id: string
-        plan_seats: number
-      }>
-    }>('/admin/payments'),
   },
   endpointLimits: {
     list: (agentId: string) =>

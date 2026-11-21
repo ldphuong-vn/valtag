@@ -80,7 +80,6 @@ export interface Organization {
   name: string
   slug: string
   owner_id: string
-  plan: string
   created_at: string
   updated_at: string
   // mapping visibility: org → workspace → project chain (2026-11-21)

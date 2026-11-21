@@ -210,7 +210,6 @@ export default function OverviewPage() {
               <CardTitle className="text-base flex items-center gap-2">
                 <Building2 className="w-4 h-4 text-muted-foreground" /> {org.name}
               </CardTitle>
-              <Badge variant="secondary" className="capitalize">{org.plan}</Badge>
             </div>
           </CardHeader>
           <CardContent className="space-y-3">

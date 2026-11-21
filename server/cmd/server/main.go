@@ -20,7 +20,6 @@ import (
 	"github.com/ldphuong-vn/valtag/server/internal/agent"
 	"github.com/ldphuong-vn/valtag/server/internal/audit"
 	"github.com/ldphuong-vn/valtag/server/internal/auth"
-	"github.com/ldphuong-vn/valtag/server/internal/billing"
 	"github.com/ldphuong-vn/valtag/server/internal/integration"
 	"github.com/ldphuong-vn/valtag/server/internal/config"
 	"github.com/ldphuong-vn/valtag/server/internal/consent"
@@ -37,7 +36,6 @@ import (
 	"github.com/ldphuong-vn/valtag/server/internal/project"
 	"github.com/ldphuong-vn/valtag/server/internal/ratelimit"
 	"github.com/ldphuong-vn/valtag/server/internal/scanner"
-	"github.com/ldphuong-vn/valtag/server/internal/usage"
 	"github.com/ldphuong-vn/valtag/server/internal/vault"
 	"github.com/ldphuong-vn/valtag/server/internal/webhooks"
 	"github.com/ldphuong-vn/valtag/server/internal/workflow"
@@ -194,13 +192,6 @@ func main() {
 		metrics.Register()
 	}
 
-	// Billing (Stripe)
-	var billingHandler *billing.Handler
-	if cfg.StripeSecretKey != "" {
-		billingSvc := billing.NewService(pool, cfg.StripeSecretKey, cfg.StripeWebhookSecret, cfg.StripePriceProID, cfg.StripePriceTeamID)
-		billingHandler = billing.NewHandler(billingSvc, orgSvc)
-	}
-
 	// Integration store (Slack OAuth per-org)
 	integrationStore := integration.NewStore(pool, masterKey)
 	var slackOAuthHandler *integration.SlackOAuthHandler
@@ -214,10 +205,6 @@ func main() {
 	webhookStore := webhooks.NewStore(pool)
 	webhookHandler := webhooks.NewHandler(webhookStore)
 	_ = webhooks.NewDispatcher(webhookStore) // dispatcher called from workflow handlers
-
-	// Usage tracking
-	usageTracker := usage.NewTracker(pool)
-	usageHandler := usage.NewHandler(usageTracker)
 
 	// Admin handler (super-admin dashboard endpoints)
 	adminHandler := admin.NewHandler(pool)
@@ -295,11 +282,6 @@ func main() {
 
 		// Public: Telegram Update callbacks (no auth — Telegram pushes to this endpoint)
 		r.Post("/webhooks/telegram", telegramWebhookHandler.Handle)
-
-		// Public: Stripe webhook (verified via signing secret)
-		if billingHandler != nil {
-			r.Post("/webhooks/stripe", billingHandler.HandleWebhook)
-		}
 
 		// Public: Slack OAuth callback (user redirected from Slack)
 		if slackOAuthHandler != nil {
@@ -390,11 +372,6 @@ func main() {
 			// Consent and user-specific operations (audit now lives on the
 			// dual-auth group above so agents can read their own trail)
 			r.Mount("/consent", consentHandler.Routes())
-			// Billing (checkout + portal)
-			if billingHandler != nil {
-				r.Post("/billing/checkout-session", billingHandler.CreateCheckout)
-				r.Post("/billing/portal", billingHandler.CreatePortal)
-			}
 			// Integrations (Slack OAuth + list/disconnect)
 			if slackOAuthHandler != nil {
 				r.Get("/oauth/slack", slackOAuthHandler.Authorize)
@@ -421,10 +398,6 @@ func main() {
 			gatewayHandler.RegisterRoutes(r)
 			scannerHandler.RegisterRoutes(r)
 			dynHandler.RegisterRoutes(r)
-			r.Group(func(r chi.Router) {
-				r.Use(rbac.RequireOrgMembership(pool, "org_id", rbac.OrgViewer))
-				usageHandler.RegisterRoutes(r)
-			})
 
 			// Admin routes — restricted to users with role = 'admin'
 			r.Route("/admin", func(r chi.Router) {
@@ -433,7 +406,6 @@ func main() {
 				r.Get("/users", adminHandler.ListUsers)
 				r.Get("/orgs", adminHandler.ListOrgs)
 				r.Get("/leases", adminHandler.ListActiveLeases)
-				r.Get("/payments", adminHandler.ListPayments)
 			})
 		})
 	})

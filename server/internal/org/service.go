@@ -22,7 +22,6 @@ type Org struct {
 	Name      string    `json:"name"`
 	Slug      string    `json:"slug"`
 	OwnerID   string    `json:"owner_id"`
-	Plan      string    `json:"plan"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	// Mapping visibility (2026-11-21): the org → workspace → project chain
@@ -72,11 +71,11 @@ func (s *Service) Create(ctx context.Context, name, slug, ownerID string) (*Org,
 
 	var o Org
 	err = tx.QueryRow(ctx,
-		`INSERT INTO organizations (name, slug, owner_id, plan)
-		 VALUES ($1, $2, $3, 'free')
-		 RETURNING id, name, slug, owner_id, plan, created_at, updated_at`,
+		`INSERT INTO organizations (name, slug, owner_id)
+		 VALUES ($1, $2, $3)
+		 RETURNING id, name, slug, owner_id, created_at, updated_at`,
 		name, slug, ownerID,
-	).Scan(&o.ID, &o.Name, &o.Slug, &o.OwnerID, &o.Plan, &o.CreatedAt, &o.UpdatedAt)
+	).Scan(&o.ID, &o.Name, &o.Slug, &o.OwnerID, &o.CreatedAt, &o.UpdatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("inserting org: %w", err)
 	}
@@ -99,10 +98,10 @@ func (s *Service) Create(ctx context.Context, name, slug, ownerID string) (*Org,
 func (s *Service) Get(ctx context.Context, id string) (*Org, error) {
 	var o Org
 	err := s.pool.QueryRow(ctx,
-		`SELECT id, name, slug, owner_id, plan, created_at, updated_at
+		`SELECT id, name, slug, owner_id, created_at, updated_at
 		 FROM organizations WHERE id = $1`,
 		id,
-	).Scan(&o.ID, &o.Name, &o.Slug, &o.OwnerID, &o.Plan, &o.CreatedAt, &o.UpdatedAt)
+	).Scan(&o.ID, &o.Name, &o.Slug, &o.OwnerID, &o.CreatedAt, &o.UpdatedAt)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, nil
@@ -121,7 +120,7 @@ func (s *Service) UpdateName(ctx context.Context, orgID, name string) error {
 // ListByUser returns all orgs the user is a member of.
 func (s *Service) ListByUser(ctx context.Context, userID string) ([]Org, error) {
 	rows, err := s.pool.Query(ctx,
-		`SELECT o.id, o.name, o.slug, o.owner_id, o.plan, o.created_at, o.updated_at,
+		`SELECT o.id, o.name, o.slug, o.owner_id, o.created_at, o.updated_at,
 		        (SELECT count(*) FROM workspaces w WHERE w.org_id = o.id) AS workspace_count,
 		        (SELECT count(*) FROM projects pj
 		         JOIN workspaces w2 ON w2.id = pj.workspace_id
@@ -140,7 +139,7 @@ func (s *Service) ListByUser(ctx context.Context, userID string) ([]Org, error) 
 	var orgs []Org
 	for rows.Next() {
 		var o Org
-		if err := rows.Scan(&o.ID, &o.Name, &o.Slug, &o.OwnerID, &o.Plan, &o.CreatedAt, &o.UpdatedAt,
+		if err := rows.Scan(&o.ID, &o.Name, &o.Slug, &o.OwnerID, &o.CreatedAt, &o.UpdatedAt,
 			&o.WorkspaceCount, &o.ProjectCount); err != nil {
 			return nil, fmt.Errorf("scanning org: %w", err)
 		}

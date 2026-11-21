@@ -47,21 +47,19 @@ func AdminMiddleware(pool *pgxpool.Pool) func(http.Handler) http.Handler {
 
 // statsResponse holds the system overview numbers.
 type statsResponse struct {
-	TotalUsers         int64            `json:"total_users"`
-	TotalOrgs          int64            `json:"total_orgs"`
-	TotalSecrets       int64            `json:"total_secrets"`
-	TotalAgents        int64            `json:"total_agents"`
-	TotalRequestsToday int64            `json:"total_requests_today"`
-	TotalRequestsAll   int64            `json:"total_requests_all"`
-	UsersToday         int64            `json:"users_today"`
-	PlanDistribution   map[string]int64 `json:"plan_distribution"`
+	TotalUsers         int64 `json:"total_users"`
+	TotalOrgs          int64 `json:"total_orgs"`
+	TotalSecrets       int64 `json:"total_secrets"`
+	TotalAgents        int64 `json:"total_agents"`
+	TotalRequestsToday int64 `json:"total_requests_today"`
+	TotalRequestsAll   int64 `json:"total_requests_all"`
+	UsersToday         int64 `json:"users_today"`
 }
 
-// GetStats returns system-wide counts and plan distribution.
+// GetStats returns system-wide counts.
 func (h *Handler) GetStats(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var resp statsResponse
-	resp.PlanDistribution = make(map[string]int64)
 
 	// Aggregate counts in a single query for efficiency.
 	row := h.pool.QueryRow(ctx, `
@@ -85,23 +83,6 @@ func (h *Handler) GetStats(w http.ResponseWriter, r *http.Request) {
 	); err != nil {
 		apierror.InternalError(w, "failed to query stats")
 		return
-	}
-
-	// Plan distribution.
-	planRows, err := h.pool.Query(ctx, `
-		SELECT COALESCE(plan, 'free'), COUNT(*) FROM organizations GROUP BY plan
-	`)
-	if err != nil {
-		apierror.InternalError(w, "failed to query plan distribution")
-		return
-	}
-	defer planRows.Close()
-	for planRows.Next() {
-		var plan string
-		var count int64
-		if err := planRows.Scan(&plan, &count); err == nil {
-			resp.PlanDistribution[plan] = count
-		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -197,7 +178,6 @@ type orgRow struct {
 	Name         string `json:"name"`
 	Slug         string `json:"slug"`
 	OwnerID      string `json:"owner_id"`
-	Plan         string `json:"plan"`
 	MemberCount  int64  `json:"member_count"`
 	SecretsCount int64  `json:"secrets_count"`
 	CreatedAt    string `json:"created_at"`
@@ -218,7 +198,7 @@ func (h *Handler) ListOrgs(w http.ResponseWriter, r *http.Request) {
 
 	rows, err := h.pool.Query(ctx, `
 		SELECT
-			o.id, o.name, o.slug, o.owner_id::text, COALESCE(o.plan, 'free'),
+			o.id, o.name, o.slug, o.owner_id::text,
 			(SELECT COUNT(*) FROM org_memberships om WHERE om.org_id = o.id),
 			(
 				SELECT COUNT(*) FROM secrets s
@@ -241,7 +221,7 @@ func (h *Handler) ListOrgs(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var o orgRow
 		var createdAt time.Time
-		if err := rows.Scan(&o.ID, &o.Name, &o.Slug, &o.OwnerID, &o.Plan,
+		if err := rows.Scan(&o.ID, &o.Name, &o.Slug, &o.OwnerID,
 			&o.MemberCount, &o.SecretsCount, &createdAt); err != nil {
 			continue
 		}
@@ -255,49 +235,6 @@ func (h *Handler) ListOrgs(w http.ResponseWriter, r *http.Request) {
 		"page":  page,
 		"limit": limit,
 	})
-}
-
-// paymentRow is the shape returned by ListPayments.
-type paymentRow struct {
-	OrgID                string `json:"org_id"`
-	OrgName              string `json:"org_name"`
-	Plan                 string `json:"plan"`
-	StripeCustomerID     string `json:"stripe_customer_id"`
-	StripeSubscriptionID string `json:"stripe_subscription_id"`
-	PlanSeats            int64  `json:"plan_seats"`
-}
-
-// ListPayments returns orgs that have Stripe subscription data.
-func (h *Handler) ListPayments(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	rows, err := h.pool.Query(ctx, `
-		SELECT
-			id::text, name, COALESCE(plan, 'free'),
-			COALESCE(stripe_customer_id, ''),
-			COALESCE(stripe_subscription_id, ''),
-			COALESCE(plan_seats, 0)
-		FROM organizations
-		WHERE stripe_customer_id IS NOT NULL OR stripe_subscription_id IS NOT NULL
-		ORDER BY created_at DESC
-	`)
-	if err != nil {
-		apierror.InternalError(w, "failed to query payments")
-		return
-	}
-	defer rows.Close()
-
-	payments := []paymentRow{}
-	for rows.Next() {
-		var p paymentRow
-		if err := rows.Scan(&p.OrgID, &p.OrgName, &p.Plan,
-			&p.StripeCustomerID, &p.StripeSubscriptionID, &p.PlanSeats); err != nil {
-			continue
-		}
-		payments = append(payments, p)
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{"payments": payments})
 }
 
 // ListActiveLeases handles GET /admin/leases — every live lease across all
