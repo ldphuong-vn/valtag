@@ -3,13 +3,15 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { KeyRound, ClipboardCheck, ScrollText, Settings, LogOut, Shield, Bot, Building2, ChevronDown, ScanLine, Database, ShieldCheck, FolderOpen, ShieldAlert, LayoutDashboard, type LucideIcon } from 'lucide-react'
+import { KeyRound, ClipboardCheck, ScrollText, Settings, LogOut, Shield, Bot, ScanLine, Database, ShieldCheck, FolderOpen, ShieldAlert, LayoutDashboard, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 // IA modeled on the entity-first sidebars of Vault UI (Secrets/Access/Tools),
 // 1Password Business (People/Vaults/Policies/Reports) and Tailscale
 // (Machines/Users/Access controls): primary objects first, policy and
 // operations as their own labeled groups — never buried under Settings.
+// With the single-org policy (2026-11-21) there is no org switcher here:
+// the org lives on the Overview page.
 const navGroups: { label: string; items: { href: string; label: string; icon: LucideIcon }[] }[] = [
   {
     label: 'Day-to-day',
@@ -50,74 +52,16 @@ async function handleLogout() {
 export default function Sidebar() {
   const pathname = usePathname()
   const [policyHref, setPolicyHref] = useState('/projects')
-  const [workspaceName, setWorkspaceName] = useState<string | null>(null)
-  // Org switcher: every org the user belongs to, selectable straight from the
-  // sidebar (previously the entry was just a link — creating a second org
-  // gave it nowhere to appear).
-  const [orgsOpen, setOrgsOpen] = useState(false)
-  const [orgs, setOrgs] = useState<{ id: string; name: string }[] | null>(null)
-  const [currentOrgId, setCurrentOrgId] = useState('')
-  const [switching, setSwitching] = useState(false)
-
-  async function loadOrgs() {
-    try {
-      const res = await fetch('/api/proxy/orgs', { credentials: 'include' })
-      const data = await res.json()
-      const list = Array.isArray(data) ? data : (data.orgs ?? [])
-      setOrgs(list.map((o: { id: string; name?: string }) => ({ id: o.id, name: o.name ?? o.id })))
-    } catch {
-      setOrgs([])
-    }
-  }
-
-  async function selectOrg(orgId: string) {
-    if (switching) return
-    setOrgsOpen(false)
-    if (orgId === localStorage.getItem('valt_current_org')) return
-    setSwitching(true)
-    try {
-      localStorage.setItem('valt_current_org', orgId)
-      const wsRes = await fetch(`/api/proxy/orgs/${orgId}/workspaces`, { credentials: 'include' })
-      const wsData = await wsRes.json()
-      const workspaces = Array.isArray(wsData) ? wsData : (wsData.workspaces ?? [])
-      const ws = workspaces[0]
-      if (ws) {
-        localStorage.setItem('valt_current_workspace', ws.id as string)
-        localStorage.setItem('valt_current_workspace_name', (ws.name ?? 'Workspace') as string)
-      } else {
-        localStorage.removeItem('valt_current_workspace')
-        localStorage.removeItem('valt_current_workspace_name')
-      }
-      if (ws) {
-        const projRes = await fetch(`/api/proxy/workspaces/${ws.id}/projects`, { credentials: 'include' })
-        const projData = await projRes.json()
-        const projects = Array.isArray(projData) ? projData : (projData.projects ?? [])
-        if (projects[0]?.id) localStorage.setItem('valt_current_project', projects[0].id as string)
-        else localStorage.removeItem('valt_current_project')
-      } else {
-        localStorage.removeItem('valt_current_project')
-      }
-      window.dispatchEvent(new Event('valtag:workspace-changed'))
-      window.dispatchEvent(new Event('valtag:project-changed'))
-    } finally {
-      setSwitching(false)
-    }
-  }
 
   useEffect(() => {
     const updateHref = () => {
       const pid = localStorage.getItem('valt_current_project')
       setPolicyHref(pid ? `/projects/${pid}/policies` : '/projects')
-
-      const wsId = localStorage.getItem('valt_current_workspace')
-      const wsName = localStorage.getItem('valt_current_workspace_name')
-      setWorkspaceName(wsId ? (wsName || 'Workspace selected') : null)
-      setCurrentOrgId(localStorage.getItem('valt_current_org') ?? '')
     }
     updateHref()
     // Self-heal: a returning user whose localStorage was cleared (new browser,
-    // cleared site data) otherwise sees "No workspace selected" forever —
-    // re-derive the context from their first org/workspace/project.
+    // cleared site data) otherwise loses their context — re-derive it from
+    // their first org/workspace/project.
     async function ensureContext() {
       const wsId = localStorage.getItem('valt_current_workspace')
       const hasProject = !!localStorage.getItem('valt_current_project')
@@ -125,7 +69,6 @@ export default function Sidebar() {
       try {
         let orgId = localStorage.getItem('valt_current_org')
         let workspaceId = wsId
-        let workspaceName = localStorage.getItem('valt_current_workspace_name')
         if (!orgId) {
           const orgsRes = await fetch('/api/proxy/orgs', { credentials: 'include' })
           const orgsData = await orgsRes.json()
@@ -141,9 +84,9 @@ export default function Sidebar() {
           const ws = workspaces[0]
           if (!ws) return
           workspaceId = ws.id as string
-          workspaceName = ws.name ?? 'Workspace'
+          const wsName = ws.name ?? 'Workspace'
           localStorage.setItem('valt_current_workspace', workspaceId)
-          localStorage.setItem('valt_current_workspace_name', workspaceName ?? 'Workspace')
+          localStorage.setItem('valt_current_workspace_name', wsName as string)
         }
         if (!hasProject) {
           const projRes = await fetch(`/api/proxy/workspaces/${workspaceId}/projects`, { credentials: 'include' })
@@ -157,7 +100,7 @@ export default function Sidebar() {
         window.dispatchEvent(new Event('valtag:workspace-changed'))
         window.dispatchEvent(new Event('valtag:project-changed'))
       } catch {
-        // stay on the "No workspace selected" state — user can pick via /orgs
+        // stay without context — Overview shows what is missing
       }
     }
     void ensureContext()
@@ -187,68 +130,6 @@ export default function Sidebar() {
           <Shield className="w-4 h-4 text-primary" />
         </div>
         <span className="font-semibold text-sm">valtag</span>
-      </div>
-
-      {/* Org/Workspace context — compact line + org switcher dropdown. The
-          workspace name sits as a subtitle inside the entry; selecting an org
-          from the menu switches the whole context (workspace + project). */}
-      <div className="px-3 py-2.5 border-b">
-        <div className="relative">
-          <button
-            onClick={() => { setOrgsOpen(v => { if (!v) void loadOrgs(); return !v }); setCurrentOrgId(localStorage.getItem('valt_current_org') ?? '') }}
-            className="w-full flex items-center gap-2 rounded-md bg-accent/50 px-2 py-2 hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring text-left"
-          >
-            <Building2 className="w-4 h-4 shrink-0 text-muted-foreground" />
-            <span className="min-w-0 flex-1 leading-tight">
-              <span className="block truncate text-xs font-semibold">Organizations</span>
-              {workspaceName && (
-                <span className="block truncate text-[11px] font-medium text-primary">{workspaceName}</span>
-              )}
-            </span>
-            <ChevronDown className={cn('w-3.5 h-3.5 shrink-0 opacity-50 transition-transform', orgsOpen && 'rotate-180')} />
-          </button>
-
-          {orgsOpen && (
-            <>
-              {/* click-outside backdrop */}
-              <button
-                aria-hidden
-                onClick={() => setOrgsOpen(false)}
-                className="fixed inset-0 z-40 cursor-default"
-              />
-              <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-lg border bg-popover shadow-lg p-1.5">
-                {switching ? (
-                  <div className="px-2 py-2 text-xs text-muted-foreground">Switching context…</div>
-                ) : orgs === null ? (
-                  <div className="px-2 py-2 text-xs text-muted-foreground">Loading…</div>
-                ) : orgs.length === 0 ? (
-                  <div className="px-2 py-2 text-xs text-muted-foreground">No organizations yet.</div>
-                ) : (
-                  orgs.map(o => (
-                    <button
-                      key={o.id}
-                      onClick={() => void selectOrg(o.id)}
-                      className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent transition-colors text-left"
-                    >
-                      <span className={cn('w-2 h-2 rounded-full shrink-0', o.id === currentOrgId ? 'bg-green-500' : 'bg-transparent border border-muted-foreground/40')} />
-                      <span className="truncate flex-1">{o.name}</span>
-                      {o.id === currentOrgId && <span className="text-[10px] text-muted-foreground">current</span>}
-                    </button>
-                  ))
-                )}
-                <div className="my-1 h-px bg-border" />
-                <Link
-                  href="/orgs"
-                  onClick={() => setOrgsOpen(false)}
-                  className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-primary hover:bg-accent transition-colors"
-                >
-                  <Building2 className="w-4 h-4 shrink-0" />
-                  Manage organizations…
-                </Link>
-              </div>
-            </>
-          )}
-        </div>
       </div>
 
       <nav className="flex-1 px-3 py-3 overflow-y-auto space-y-3">

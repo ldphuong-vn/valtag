@@ -118,10 +118,10 @@ export default function ProjectsPage() {
             Projects are organized within workspaces. To view or create projects, please select a workspace from your organization first.
           </p>
           <Link
-            href="/orgs"
+            href="/overview"
             className="inline-flex items-center gap-2 px-4 py-2 min-h-[44px] justify-center rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
-            Go to Organizations
+            Pick a workspace in Overview
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
