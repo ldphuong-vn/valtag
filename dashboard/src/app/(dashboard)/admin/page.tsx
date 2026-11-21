@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { api, ApiError } from '@/lib/api-client'
-import { Shield, Users, Building2, KeyRound, Activity, UserPlus } from 'lucide-react'
+import { Shield, Users, Building2, KeyRound, Activity, UserPlus, Timer } from 'lucide-react'
 
 // ---------------------------------------------------------------------------
 // Types (inferred from api-client shapes)
@@ -10,6 +10,7 @@ import { Shield, Users, Building2, KeyRound, Activity, UserPlus } from 'lucide-r
 type Stats = Awaited<ReturnType<typeof api.admin.stats>>
 type UserRow = Awaited<ReturnType<typeof api.admin.users>>['users'][number]
 type OrgRow = Awaited<ReturnType<typeof api.admin.orgs>>['orgs'][number]
+type LeaseRow = Awaited<ReturnType<typeof api.admin.leases>>['leases'][number]
 
 // ---------------------------------------------------------------------------
 // Small reusable stat card
@@ -34,44 +35,6 @@ function StatCard({
         <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{label}</p>
         <p className="text-2xl font-bold mt-0.5">{value}</p>
         {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
-      </div>
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Plan distribution bar
-// ---------------------------------------------------------------------------
-function PlanBar({ dist }: { dist: Record<string, number> }) {
-  const plans = ['free', 'pro', 'team']
-  const total = Object.values(dist).reduce((a, b) => a + b, 0) || 1
-  const colors: Record<string, string> = {
-    free: 'bg-slate-400',
-    pro: 'bg-blue-500',
-    team: 'bg-violet-500',
-  }
-  return (
-    <div className="rounded-lg border bg-card p-5">
-      <p className="text-sm font-semibold mb-4">Plan Distribution</p>
-      <div className="space-y-3">
-        {plans.map((plan) => {
-          const count = dist[plan] ?? 0
-          const pct = Math.round((count / total) * 100)
-          return (
-            <div key={plan} className="space-y-1">
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span className="capitalize font-medium">{plan}</span>
-                <span>{count} orgs ({pct}%)</span>
-              </div>
-              <div className="h-2 rounded-full bg-muted overflow-hidden">
-                <div
-                  className={`h-full rounded-full ${colors[plan] ?? 'bg-primary'}`}
-                  style={{ width: `${pct}%` }}
-                />
-              </div>
-            </div>
-          )
-        })}
       </div>
     </div>
   )
@@ -109,12 +72,6 @@ function Badge({ label, variant }: { label: string; variant?: 'green' | 'amber' 
   )
 }
 
-function planVariant(plan: string): 'green' | 'blue' | 'violet' | 'default' {
-  if (plan === 'pro') return 'blue'
-  if (plan === 'team') return 'violet'
-  return 'default'
-}
-
 function formatDate(iso: string) {
   if (!iso) return '—'
   try {
@@ -131,6 +88,7 @@ export default function AdminPage() {
   const [stats, setStats] = useState<Stats | null>(null)
   const [users, setUsers] = useState<UserRow[]>([])
   const [orgs, setOrgs] = useState<OrgRow[]>([])
+  const [leases, setLeases] = useState<LeaseRow[] | null>(null)
   const [loading, setLoading] = useState(true)
   const [forbidden, setForbidden] = useState(false)
   const [search, setSearch] = useState('')
@@ -140,15 +98,17 @@ export default function AdminPage() {
     let cancelled = false
     async function load() {
       try {
-        const [s, u, o] = await Promise.all([
+        const [s, u, o, l] = await Promise.all([
           api.admin.stats(),
           api.admin.users({ search: search || undefined }),
           api.admin.orgs(),
+          api.admin.leases().catch(() => ({ leases: [] as LeaseRow[] })),
         ])
         if (cancelled) return
         setStats(s)
         setUsers(u.users)
         setOrgs(o.orgs)
+        setLeases(l.leases)
       } catch (err) {
         if (cancelled) return
         if (err instanceof ApiError && err.status === 403) {
@@ -186,7 +146,7 @@ export default function AdminPage() {
       <div className="flex items-center gap-3">
         <Shield className="w-6 h-6 text-primary" />
         <div>
-          <h1 className="text-xl font-bold">Super Admin</h1>
+          <h1 className="text-xl font-bold">Admin</h1>
           <p className="text-sm text-muted-foreground">System-wide monitoring for valtag operators</p>
         </div>
       </div>
@@ -216,19 +176,54 @@ export default function AdminPage() {
             icon={Activity}
             sub={`${stats.total_requests_all} all time`}
           />
-        </div>
-      )}
-
-      {/* Plan distribution */}
-      {stats && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <PlanBar dist={stats.plan_distribution} />
+          <StatCard
+            label="Active Leases"
+            value={leases?.length ?? '…'}
+            icon={Timer}
+            sub="live credentials across all providers"
+          />
           <StatCard
             label="Total Agents"
             value={stats.total_agents}
             icon={UserPlus}
           />
         </div>
+      )}
+
+      {/* Leases table */}
+      {leases !== null && (
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <Timer className="w-4 h-4 text-muted-foreground" />
+            <h2 className="text-base font-semibold">Active leases</h2>
+            <span className="text-xs text-muted-foreground">— who holds what, expiring first</span>
+          </div>
+          <div className="rounded-lg border overflow-hidden">
+            <table className="w-full text-sm">
+              <TableHead cols={['Provider', 'Agent', 'TTL', 'Expires', 'Created']} />
+              <tbody>
+                {leases.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-3 py-6 text-center text-muted-foreground text-sm">
+                      No active leases right now.
+                    </td>
+                  </tr>
+                )}
+                {leases.map((l) => (
+                  <tr key={l.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                    <td className="px-3 py-2.5 font-medium">{l.provider_name}</td>
+                    <td className="px-3 py-2.5 text-muted-foreground font-mono text-xs">
+                      {l.agent_id ? `${l.agent_id.slice(0, 8)}…` : '—'}
+                    </td>
+                    <td className="px-3 py-2.5">{l.ttl_seconds >= 60 ? `${Math.round(l.ttl_seconds / 60)}m` : `${l.ttl_seconds}s`}</td>
+                    <td className="px-3 py-2.5 text-blue-600 dark:text-blue-400 font-medium">{formatDate(l.expires_at)}</td>
+                    <td className="px-3 py-2.5 text-muted-foreground">{formatDate(l.created_at)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
       )}
 
       {/* Users table */}
@@ -304,11 +299,11 @@ export default function AdminPage() {
         <h2 className="text-base font-semibold mb-3">Organizations</h2>
         <div className="rounded-lg border overflow-hidden">
           <table className="w-full text-sm">
-            <TableHead cols={['Name', 'Slug', 'Plan', 'Members', 'Secrets', 'Created']} />
+            <TableHead cols={['Name', 'Slug', 'Members', 'Secrets', 'Created']} />
             <tbody>
               {orgs.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-3 py-6 text-center text-muted-foreground text-sm">
+                  <td colSpan={5} className="px-3 py-6 text-center text-muted-foreground text-sm">
                     No organizations found.
                   </td>
                 </tr>
@@ -317,9 +312,6 @@ export default function AdminPage() {
                 <tr key={o.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                   <td className="px-3 py-2.5 font-medium">{o.name}</td>
                   <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{o.slug}</td>
-                  <td className="px-3 py-2.5">
-                    <Badge label={o.plan} variant={planVariant(o.plan)} />
-                  </td>
                   <td className="px-3 py-2.5">{o.member_count}</td>
                   <td className="px-3 py-2.5">{o.secrets_count}</td>
                   <td className="px-3 py-2.5 text-muted-foreground">{formatDate(o.created_at)}</td>

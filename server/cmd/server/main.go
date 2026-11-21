@@ -432,6 +432,7 @@ func main() {
 				r.Get("/stats", adminHandler.GetStats)
 				r.Get("/users", adminHandler.ListUsers)
 				r.Get("/orgs", adminHandler.ListOrgs)
+				r.Get("/leases", adminHandler.ListActiveLeases)
 				r.Get("/payments", adminHandler.ListPayments)
 			})
 		})

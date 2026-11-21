@@ -264,6 +264,18 @@ export const api = {
       users_today: number
       plan_distribution: Record<string, number>
     }>('/admin/stats'),
+    leases: () =>
+      apiFetch<{
+        leases: Array<{
+          id: string
+          provider_id: string
+          provider_name: string
+          agent_id?: string
+          ttl_seconds: number
+          expires_at: string
+          created_at: string
+        }>
+      }>('/admin/leases'),
     users: (params?: { page?: number; limit?: number; search?: string }) => {
       const q = new URLSearchParams(params as Record<string, string>).toString()
       return apiFetch<{

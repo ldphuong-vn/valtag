@@ -288,6 +288,53 @@ func (h *Handler) ListPayments(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]interface{}{"payments": payments})
 }
 
+// ListActiveLeases handles GET /admin/leases — every live lease across all
+// providers, expiring first. This is the admin console's system-level
+// "who holds what right now" (the per-provider list lives in dynsecret).
+func (h *Handler) ListActiveLeases(w http.ResponseWriter, r *http.Request) {
+	rows, err := h.pool.Query(r.Context(), `
+		SELECT l.id, l.provider_id, p.name, l.agent_id, l.ttl_seconds, l.expires_at, l.created_at
+		FROM dynamic_leases l
+		JOIN dynamic_providers p ON p.id = l.provider_id
+		WHERE l.revoked_at IS NULL AND l.expires_at > now()
+		ORDER BY l.expires_at ASC
+		LIMIT 100`)
+	if err != nil {
+		apierror.InternalError(w, "failed to list leases")
+		return
+	}
+	defer rows.Close()
+
+	type adminLease struct {
+		ID         string    `json:"id"`
+		ProviderID string    `json:"provider_id"`
+		Provider   string    `json:"provider_name"`
+		AgentID    *string   `json:"agent_id"`
+		TTLSeconds int       `json:"ttl_seconds"`
+		ExpiresAt  time.Time `json:"expires_at"`
+		CreatedAt  time.Time `json:"created_at"`
+	}
+
+	leases := []adminLease{}
+	for rows.Next() {
+		var l adminLease
+		var agentID *string
+		if err := rows.Scan(&l.ID, &l.ProviderID, &l.Provider, &agentID, &l.TTLSeconds, &l.ExpiresAt, &l.CreatedAt); err != nil {
+			apierror.InternalError(w, "failed to scan leases")
+			return
+		}
+		l.AgentID = agentID
+		leases = append(leases, l)
+	}
+	if err := rows.Err(); err != nil {
+		apierror.InternalError(w, "failed to read leases")
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{"leases": leases}) //nolint:errcheck
+}
+
 // pgxRows is a minimal interface over pgx.Rows to allow multiple query signatures.
 type pgxRows interface {
 	Close()
