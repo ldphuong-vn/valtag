@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Copy, History, Plus } from 'lucide-react'
 import { api } from '@/lib/api-client'
 import type { PolicyParameters, PolicyTemplate, PolicyTemplateVersion, ProjectMembership } from '@/types/api'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { defaultPolicy } from './policy-helpers'
 import { PolicyTemplateEditorDialog } from './policy-template-editor-dialog'
 import { PolicyTemplateHistoryDialog } from './policy-template-history-dialog'
@@ -20,12 +22,16 @@ interface Props {
 }
 
 export default function PolicyTemplatesPage({ projectId, currentUserId }: Props) {
+  const router = useRouter()
   const [templates, setTemplates] = useState<PolicyTemplate[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [role, setRole] = useState('viewer')
   const [projectName, setProjectName] = useState('')
   const [projectSlug, setProjectSlug] = useState('')
+  // project switcher: sibling projects of the workspace the viewed project
+  // belongs to — switching stays on this page (no detour through Projects)
+  const [siblings, setSiblings] = useState<{ id: string; name: string }[]>([])
   const [open, setOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [versions, setVersions] = useState<PolicyTemplateVersion[]>([])
@@ -43,16 +49,17 @@ export default function PolicyTemplatesPage({ projectId, currentUserId }: Props)
     setLoading(true)
     setError('')
     try {
-      const [tplRes, membersRes] = await Promise.all([
+      const [tplRes, membersRes, projRes] = await Promise.all([
         api.policies.listTemplates(projectId),
         api.projects.getMembers(projectId),
+        api.projects.get(projectId),
       ])
       setTemplates(tplRes.templates ?? [])
-      // mapping: name the project this policy set belongs to (breadcrumb)
-      api.projects.get(projectId).then(p => {
-        setProjectName(p?.name ?? '')
-        setProjectSlug(p?.slug ?? '')
-      }).catch(() => {})
+      setProjectName(projRes?.name ?? '')
+      setProjectSlug(projRes?.slug ?? '')
+      // sibling projects of the same workspace — the switcher's options
+      const siblingsRes = await api.projects.list(projRes?.workspace_id ?? '')
+      setSiblings((siblingsRes.projects ?? []).map(p => ({ id: p.id, name: p.name })))
       // server ListMembers returns a bare array; tolerate the {members} wrapper too
       const memberList: ProjectMembership[] = Array.isArray(membersRes)
         ? membersRes
@@ -152,7 +159,23 @@ export default function PolicyTemplatesPage({ projectId, currentUserId }: Props)
           <h2 className="text-lg font-semibold">Policy templates</h2>
           <p className="text-sm text-muted-foreground">Rules applied when an agent asks for a bound secret — reason, max duration, cooldowns, auto-approve tiers.</p>
         </div>
-        <Button onClick={openCreate} disabled={!canManage}><Plus className="w-4 h-4 mr-2" />New template</Button>
+        <div className="flex items-center gap-3">
+          {/* project switcher — compare policies across projects without a detour */}
+          {siblings.length > 1 && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Project:</span>
+              <Select value={projectId} onValueChange={id => { if (id !== projectId) router.push(`/projects/${id}/policies`) }}>
+                <SelectTrigger className="h-9 w-[180px] text-sm"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {siblings.map(p => (
+                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <Button onClick={openCreate} disabled={!canManage}><Plus className="w-4 h-4 mr-2" />New template</Button>
+        </div>
       </div>
 
       {!canManage && (
