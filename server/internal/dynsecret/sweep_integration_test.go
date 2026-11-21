@@ -94,7 +94,7 @@ func seedSweepProjectChain(t *testing.T, ctx context.Context, pool *pgxpool.Pool
 		args  []any
 	}{
 		{`INSERT INTO users (id, email, password_hash) VALUES ($1, $2, $3)`, []any{userID, "sweep@example.com", "hash"}},
-		{`INSERT INTO organizations (id, name, slug, owner_id) VALUES ($1, $2, $3, $4, $5)`, []any{orgID, "Org", "org-sweep", userID}},
+		{`INSERT INTO organizations (id, name, slug, owner_id) VALUES ($1, $2, $3, $4)`, []any{orgID, "Org", "org-sweep", userID}},
 		{`INSERT INTO workspaces (id, org_id, name, slug) VALUES ($1, $2, $3, $4)`, []any{wsID, orgID, "WS", "ws-sweep"}},
 		{`INSERT INTO projects (id, workspace_id, name, slug) VALUES ($1, $2, $3, $4)`, []any{projectID, wsID, "Project", "proj-sweep"}},
 	}

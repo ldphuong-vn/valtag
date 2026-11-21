@@ -568,7 +568,7 @@ func seedE2EData(t *testing.T, ctx context.Context, pool *pgxpool.Pool) {
 		{query: `INSERT INTO users (id, email, password_hash) VALUES ($1, $2, $3)`, args: []any{e2eViewerID, "viewer@example.com", "hash"}},
 
 		// Org & Workspace & Project
-		{query: `INSERT INTO organizations (id, name, slug, owner_id) VALUES ($1, $2, $3, $4, $5)`, args: []any{e2eOrgID, "E2E Org", "e2e-org", e2eOwnerID}},
+		{query: `INSERT INTO organizations (id, name, slug, owner_id) VALUES ($1, $2, $3, $4)`, args: []any{e2eOrgID, "E2E Org", "e2e-org", e2eOwnerID}},
 		{query: `INSERT INTO workspaces (id, org_id, name, slug) VALUES ($1, $2, $3, $4)`, args: []any{e2eWorkspaceID, e2eOrgID, "E2E Workspace", "e2e-workspace"}},
 		{query: `INSERT INTO projects (id, workspace_id, name, slug) VALUES ($1, $2, $3, $4)`, args: []any{e2eProjectID, e2eWorkspaceID, "E2E Project", "e2e-project"}},
 
