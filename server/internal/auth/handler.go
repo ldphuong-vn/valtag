@@ -394,14 +394,14 @@ func (h *Handler) autoCreateOrgAndWorkspace(ctx context.Context, userID, email s
 
 	var orgID string
 	err := h.pool.QueryRow(ctx,
-		`INSERT INTO organizations (name, slug, owner_id, plan) VALUES ($1, $2, $3, 'free') RETURNING id`,
+		`INSERT INTO organizations (name, slug, owner_id) VALUES ($1, $2, $3) RETURNING id`,
 		orgName, orgSlug, userID,
 	).Scan(&orgID)
 	if err != nil {
 		// Slug conflict: retry with random suffix
 		orgSlug = orgSlug + "-" + randomHex4()
 		err = h.pool.QueryRow(ctx,
-			`INSERT INTO organizations (name, slug, owner_id, plan) VALUES ($1, $2, $3, 'free') RETURNING id`,
+			`INSERT INTO organizations (name, slug, owner_id) VALUES ($1, $2, $3) RETURNING id`,
 			orgName, orgSlug, userID,
 		).Scan(&orgID)
 		if err != nil {
