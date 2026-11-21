@@ -129,12 +129,12 @@ func TestSmoke(t *testing.T) {
 		resp := client.call(t, http.MethodGet, "/api/v1/orgs", nil, http.StatusOK)
 		var orgID string
 		// GET /orgs returns a bare array (listOrgs encodes the slice directly) —
-		// tolerate both {orgs:[…]} and a bare […]
+		// client.call stores it as the __raw string; tolerate both shapes.
 		var list []interface{}
 		if orgsRaw, ok := resp["orgs"].([]interface{}); ok {
 			list = orgsRaw
-		} else if arr, ok := resp.([]interface{}); ok {
-			list = arr
+		} else if raw, ok := resp["__raw"].(string); ok && strings.HasPrefix(strings.TrimSpace(raw), "[") {
+			_ = json.Unmarshal([]byte(raw), &list)
 		}
 		for _, o := range list {
 			if om, ok := o.(map[string]interface{}); ok {
