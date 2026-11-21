@@ -62,6 +62,12 @@ export default function OverviewPage() {
   const [slugTouched, setSlugTouched] = useState(false)
   const [creatingWs, setCreatingWs] = useState(false)
   const [wsError, setWsError] = useState('')
+  const [inviteOpen, setInviteOpen] = useState(false)
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteRole, setInviteRole] = useState('member')
+  const [inviteLink, setInviteLink] = useState('')
+  const [inviteError, setInviteError] = useState('')
+  const [inviting, setInviting] = useState(false)
 
   useEffect(() => {
     let alive = true
@@ -174,6 +180,22 @@ export default function OverviewPage() {
     }
   }
 
+  async function inviteMember() {
+    if (!org || !inviteEmail.trim()) return
+    setInviting(true)
+    setInviteLink('')
+    setInviteError('')
+    try {
+      const res = await api.orgs.invite(org.id, { email: inviteEmail.trim(), role: inviteRole })
+      setInviteLink(res.invite_url)
+      setInviteEmail('')
+    } catch (err) {
+      setInviteError(err instanceof Error ? err.message : 'Failed to create invitation')
+    } finally {
+      setInviting(false)
+    }
+  }
+
   const stat = (label: string, value: string | number | null, href: string, accent: string) => (
     <Link href={href} className="rounded-xl border bg-card p-4 hover:border-primary/50 transition-colors">
       <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
@@ -243,8 +265,13 @@ export default function OverviewPage() {
             </Button>
 
             <div className="border-t pt-3">
-              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
-                Members ({members.length})
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Members ({members.length})
+                </div>
+                <Button size="sm" variant="outline" onClick={() => { setInviteOpen(true); setInviteEmail(''); setInviteRole('member'); setInviteLink(''); setInviteError('') }}>
+                  Invite member
+                </Button>
               </div>
               <div className="space-y-1">
                 {members.map(m => (
@@ -255,6 +282,54 @@ export default function OverviewPage() {
                 ))}
                 {members.length === 0 && <p className="text-xs text-muted-foreground">No members listed.</p>}
               </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Invite member dialog — creates an invitation and shows the link to
+          hand over (email delivery needs SMTP; copy works without it). */}
+      {inviteOpen && org && (
+        <Card className="fixed inset-x-4 top-16 z-50 max-w-md mx-auto shadow-xl">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Invite member to {org.name}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="ov-invite-email">Email</Label>
+              <Input
+                id="ov-invite-email"
+                value={inviteEmail}
+                autoFocus
+                type="email"
+                onChange={e => setInviteEmail(e.target.value)}
+                placeholder="teammate@company.com"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="ov-invite-role">Role</Label>
+              <select
+                id="ov-invite-role"
+                value={inviteRole}
+                onChange={e => setInviteRole(e.target.value)}
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+              >
+                <option value="member">member</option>
+                <option value="admin">admin</option>
+              </select>
+            </div>
+            {inviteLink && (
+              <div className="space-y-1.5">
+                <Label>Invitation link — copy and hand over to the invitee</Label>
+                <Input readOnly value={inviteLink} className="font-mono text-xs" onFocus={e => e.currentTarget.select()} />
+              </div>
+            )}
+            {inviteError && <p className="text-sm text-destructive">{inviteError}</p>}
+            <div className="flex items-center gap-2">
+              <Button size="sm" disabled={inviting || !inviteEmail.trim()} onClick={() => void inviteMember()}>
+                {inviting ? 'Creating…' : inviteLink ? 'Create another' : 'Create invitation'}
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setInviteOpen(false)}>Close</Button>
             </div>
           </CardContent>
         </Card>
