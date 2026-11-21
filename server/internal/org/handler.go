@@ -12,7 +12,6 @@ import (
 
 	"github.com/ldphuong-vn/valtag/server/internal/auth"
 	"github.com/ldphuong-vn/valtag/server/internal/rbac"
-	orgservice "github.com/ldphuong-vn/valtag/server/internal/org/service"
 	"github.com/ldphuong-vn/valtag/server/pkg/apierror"
 )
 
@@ -81,6 +80,22 @@ type createOrgRequest struct {
 func (h *Handler) createOrg(w http.ResponseWriter, r *http.Request) {
 	userID := auth.UserIDFromContext(r.Context())
 
+	// Single-org policy (chốt anh 2026-11-21): a user belongs to exactly one
+	// organization on this server. Checked here so the user gets a clear 409
+	// before hitting the service-level guard as well.
+	var memberCount int
+	if err := h.pool.QueryRow(r.Context(),
+		`SELECT count(*) FROM org_memberships WHERE user_id = $1`, userID,
+	).Scan(&memberCount); err != nil {
+		log.Printf("createOrg: membership check failed: %v", err)
+		apierror.InternalError(w, "failed to verify membership")
+		return
+	}
+	if memberCount > 0 {
+		apierror.Conflict(w, "each user belongs to a single organization on this server — you are already a member of one")
+		return
+	}
+
 	var req createOrgRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		apierror.BadRequest(w, "invalid request body")
@@ -98,10 +113,8 @@ func (h *Handler) createOrg(w http.ResponseWriter, r *http.Request) {
 	o, err := h.service.Create(r.Context(), req.Name, req.Slug, userID)
 	if err != nil {
 		log.Printf("Failed to create org: %v", err)
-		if errors.Is(err, orgservice.ErrOneOrgPerUser) {
-			apierror.Conflict(w, "each user belongs to a single organization on this server — you are already a member of one")
-			return
-		}
+		// The service-level ErrOneOrgPerUser guard is a second line of defense;
+		// the pre-check above already returned a clear 409.
 		apierror.InternalError(w, "failed to create org")
 		return
 	}
