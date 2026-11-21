@@ -53,7 +53,12 @@ export default function OrgsPage() {
           <Building2 className="w-5 h-5 text-muted-foreground" />
           <h1 className="text-xl font-semibold">Organizations</h1>
         </div>
-        {!creating && (
+        {!creating && !loading && orgs.length > 0 && (
+          <span className="text-xs text-muted-foreground max-w-[280px] text-right">
+            Each user belongs to a single organization on this server.
+          </span>
+        )}
+        {!creating && !loading && orgs.length === 0 && (
           <button
             onClick={() => setCreating(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"

@@ -334,6 +334,21 @@ func (h *Handler) acceptInvitation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Single-org policy: a user belongs to exactly one organization on this
+	// server — decline invitations for users who already have one.
+	var memberCount int
+	if err := h.service.pool.QueryRow(r.Context(),
+		`SELECT count(*) FROM org_memberships WHERE user_id = $1`, callerID,
+	).Scan(&memberCount); err != nil {
+		log.Printf("org accept invitation: membership check: %v", err)
+		apierror.InternalError(w, "failed to verify membership")
+		return
+	}
+	if memberCount > 0 {
+		apierror.Conflict(w, "each user belongs to a single organization on this server — you are already a member of one")
+		return
+	}
+
 	// Add user to org and mark invitation accepted (transaction).
 	tx, err := h.service.pool.Begin(r.Context())
 	if err != nil {

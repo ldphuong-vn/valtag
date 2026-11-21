@@ -12,6 +12,7 @@ import (
 
 	"github.com/ldphuong-vn/valtag/server/internal/auth"
 	"github.com/ldphuong-vn/valtag/server/internal/rbac"
+	orgservice "github.com/ldphuong-vn/valtag/server/internal/org/service"
 	"github.com/ldphuong-vn/valtag/server/pkg/apierror"
 )
 
@@ -97,6 +98,10 @@ func (h *Handler) createOrg(w http.ResponseWriter, r *http.Request) {
 	o, err := h.service.Create(r.Context(), req.Name, req.Slug, userID)
 	if err != nil {
 		log.Printf("Failed to create org: %v", err)
+		if errors.Is(err, orgservice.ErrOneOrgPerUser) {
+			apierror.Conflict(w, "each user belongs to a single organization on this server — you are already a member of one")
+			return
+		}
 		apierror.InternalError(w, "failed to create org")
 		return
 	}

@@ -46,8 +46,24 @@ func NewService(pool *pgxpool.Pool) *Service {
 	return &Service{pool: pool}
 }
 
+// ErrOneOrgPerUser guards the single-org policy: a user belongs to exactly
+// one organization on this server (chốt anh, 2026-11-21 — self-hosted model,
+// org = "đơn vị sở hữu deployment"; nhiều phạm vi tin cậy = nhiều deployments
+// + client multi-context).
+var ErrOneOrgPerUser = fmt.Errorf("each user belongs to a single organization on this server")
+
 // Create inserts a new org and adds creator as owner member in a transaction.
 func (s *Service) Create(ctx context.Context, name, slug, ownerID string) (*Org, error) {
+	var memberCount int
+	if err := s.pool.QueryRow(ctx,
+		`SELECT count(*) FROM org_memberships WHERE user_id = $1`, ownerID,
+	).Scan(&memberCount); err != nil {
+		return nil, fmt.Errorf("checking existing orgs: %w", err)
+	}
+	if memberCount > 0 {
+		return nil, ErrOneOrgPerUser
+	}
+
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("beginning transaction: %w", err)
