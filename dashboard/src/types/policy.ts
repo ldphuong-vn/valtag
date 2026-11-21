@@ -23,6 +23,9 @@ export interface PolicyTemplate {
   created_by?: string
   created_at: string
   updated_at: string
+  // mapping #5: policy ↔ secret relation (2026-11-21)
+  bound_count: number
+  bound_secrets?: string
 }
 
 export interface PolicyTemplateVersion {
