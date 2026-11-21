@@ -137,9 +137,21 @@ export default function OverviewPage() {
     localStorage.setItem('valt_current_org', org.id)
     localStorage.setItem('valt_current_workspace', ws.id)
     localStorage.setItem('valt_current_workspace_name', ws.name)
-    localStorage.removeItem('valt_current_project')
-    window.dispatchEvent(new Event('valtag:workspace-changed'))
-    window.dispatchEvent(new Event('valtag:project-changed'))
+    // auto-pick the workspace's first project so the user never lands in a
+    // context with no project selected
+    fetch(`/api/proxy/workspaces/${ws.id}/projects`, { credentials: 'include' })
+      .then(r => r.json())
+      .then(d => {
+        const projects = Array.isArray(d) ? d : (d.projects ?? [])
+        if (projects[0]?.id) localStorage.setItem('valt_current_project', projects[0].id as string)
+        else localStorage.removeItem('valt_current_project')
+        window.dispatchEvent(new Event('valtag:workspace-changed'))
+        window.dispatchEvent(new Event('valtag:project-changed'))
+      })
+      .catch(() => {
+        window.dispatchEvent(new Event('valtag:workspace-changed'))
+        window.dispatchEvent(new Event('valtag:project-changed'))
+      })
     setCurrentWsId(ws.id)
   }
 
