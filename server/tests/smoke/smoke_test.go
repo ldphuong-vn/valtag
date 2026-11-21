@@ -128,12 +128,18 @@ func TestSmoke(t *testing.T) {
 		// of creating a second one (which now correctly 409s).
 		resp := client.call(t, http.MethodGet, "/api/v1/orgs", nil, http.StatusOK)
 		var orgID string
+		// GET /orgs returns a bare array (listOrgs encodes the slice directly) —
+		// tolerate both {orgs:[…]} and a bare […]
+		var list []interface{}
 		if orgsRaw, ok := resp["orgs"].([]interface{}); ok {
-			for _, o := range orgsRaw {
-				if om, ok := o.(map[string]interface{}); ok {
-					orgID, _ = om["id"].(string)
-					break
-				}
+			list = orgsRaw
+		} else if arr, ok := resp.([]interface{}); ok {
+			list = arr
+		}
+		for _, o := range list {
+			if om, ok := o.(map[string]interface{}); ok {
+				orgID, _ = om["id"].(string)
+				break
 			}
 		}
 		if orgID == "" {
