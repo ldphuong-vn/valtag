@@ -58,6 +58,83 @@ func (h *Handler) registerRoutes(r chi.Router) {
 	r.With(rbac.Middleware(h.db, "project_id", rbac.ResourceDynSecret, rbac.ActionRead)).
 		Get("/projects/{project_id}/providers", h.ListProviders)
 	r.Get("/providers/{provider_id}/leases", h.ListLeases)
+	// Mapping visibility (2026-11-21): project members see the leases each
+	// agent currently holds — the agent → lease relation made visible.
+	r.Get("/agents/{agent_id}/leases", h.ListAgentLeases)
+}
+
+// ListAgentLeases handles GET /agents/{agent_id}/leases — active leases held
+// by one agent. Access: project members of the agent's project (same RBAC
+// level as the per-provider list).
+func (h *Handler) ListAgentLeases(w http.ResponseWriter, r *http.Request) {
+	agentID := chi.URLParam(r, "agent_id")
+	userID := auth.UserIDFromContext(r.Context())
+	if userID == "" {
+		apierror.Unauthorized(w, "authentication required")
+		return
+	}
+
+	var projectID string
+	if err := h.db.QueryRow(r.Context(),
+		`SELECT project_id FROM agent_identities WHERE id = $1`, agentID).Scan(&projectID); err != nil {
+		if err == pgx.ErrNoRows {
+			apierror.NotFound(w, "agent not found")
+			return
+		}
+		log.Printf("ListAgentLeases: agent lookup failed: %v", err)
+		apierror.InternalError(w, "failed to load agent")
+		return
+	}
+
+	var role string
+	if err := h.db.QueryRow(r.Context(),
+		`SELECT role FROM project_memberships WHERE project_id = $1 AND user_id = $2`,
+		projectID, userID).Scan(&role); err != nil {
+		apierror.Forbidden(w, "access denied")
+		return
+	}
+	if !rbac.Can(rbac.RoleFromProjectMembership(role), rbac.ResourceDynSecret, rbac.ActionRead) {
+		apierror.Forbidden(w, "insufficient permissions")
+		return
+	}
+
+	rows, err := h.db.Query(r.Context(), `
+		SELECT id, provider_id, ttl_seconds, expires_at, created_at
+		FROM dynamic_leases
+		WHERE agent_id = $1 AND revoked_at IS NULL AND expires_at > now()
+		ORDER BY expires_at ASC`, agentID)
+	if err != nil {
+		log.Printf("ListAgentLeases query failed: %v", err)
+		apierror.InternalError(w, "failed to list leases")
+		return
+	}
+	defer rows.Close()
+
+	type agentLease struct {
+		ID         string    `json:"id"`
+		ProviderID string    `json:"provider_id"`
+		TTLSeconds int       `json:"ttl_seconds"`
+		ExpiresAt  time.Time `json:"expires_at"`
+		CreatedAt  time.Time `json:"created_at"`
+	}
+
+	leases := []agentLease{}
+	for rows.Next() {
+		var l agentLease
+		if err := rows.Scan(&l.ID, &l.ProviderID, &l.TTLSeconds, &l.ExpiresAt, &l.CreatedAt); err != nil {
+			log.Printf("ListAgentLeases scan failed: %v", err)
+			apierror.InternalError(w, "failed to read leases")
+			return
+		}
+		leases = append(leases, l)
+	}
+	if err := rows.Err(); err != nil {
+		apierror.InternalError(w, "failed to read leases")
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{"leases": leases}) //nolint:errcheck
 }
 
 type createProviderRequest struct {

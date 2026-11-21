@@ -157,6 +157,10 @@ export const api = {
       const data = await apiFetch<{ agents: AgentIdentity[] } | AgentIdentity[]>(`/projects/${projectId}/agents`)
       return Array.isArray(data) ? { agents: data } : { agents: data.agents ?? [] }
     },
+    listLeases: (agentId: string) =>
+      apiFetch<{
+        leases: Array<{ id: string; provider_id: string; ttl_seconds: number; expires_at: string; created_at: string }>
+      }>(`/agents/${agentId}/leases`),
     create: (projectId: string, body: {
       name: string
       description?: string
@@ -299,6 +303,7 @@ export const api = {
           totp_enabled: boolean
           role: string
           created_at: string
+          orgs?: string
         }>
         page: number
         limit: number

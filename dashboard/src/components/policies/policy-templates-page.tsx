@@ -168,6 +168,21 @@ export default function PolicyTemplatesPage({ projectId, currentUserId }: Props)
               </CardHeader>
               <CardContent className="pt-0">
                 {template.description && <p className="text-sm text-muted-foreground mb-3">{template.description}</p>}
+                {/* policy ↔ secret relation (mapping #5) */}
+                <p className="text-xs mb-3">
+                  {template.bound_count > 0 ? (
+                    <>
+                      <span className="font-semibold text-green-600 dark:text-green-400">
+                        Bound to {template.bound_count} secret{template.bound_count > 1 ? 's' : ''}
+                      </span>
+                      {template.bound_secrets && (
+                        <span className="text-muted-foreground"> — {template.bound_secrets}</span>
+                      )}
+                    </>
+                  ) : (
+                    <span className="text-muted-foreground">Not bound to any secret yet — bind it on a secret's policy page.</span>
+                  )}
+                </p>
                 <div className="flex items-center gap-2">
                   <Button variant="outline" size="sm" onClick={() => openHistory(template)}><History className="w-4 h-4 mr-1" />History</Button>
                   <Button variant="outline" size="sm" disabled={!canManage} onClick={() => openClone(template)}><Copy className="w-4 h-4 mr-1" />Clone</Button>

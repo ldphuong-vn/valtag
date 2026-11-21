@@ -15,6 +15,8 @@ const DEFAULT_FORM: CreateForm = { name: '', description: '', agent_type: 'custo
 export default function AgentsPage() {
   const [projectId, setProjectId] = useState<string | null>(null)
   const [agents, setAgents] = useState<AgentIdentity[]>([])
+  // mapping #6: agent → number of active leases it holds (server /agents/{id}/leases)
+  const [agentLeases, setAgentLeases] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -28,11 +30,21 @@ export default function AgentsPage() {
       setProjectId(pid)
       if (pid) {
         api.agents.list(pid)
-          .then(r => setAgents(r.agents ?? []))
+          .then(r => {
+            const list = r.agents ?? []
+            setAgents(list)
+            // mapping #6: per-agent active lease counts
+            Promise.all(list.map(a =>
+              api.agents.listLeases(a.id)
+                .then(lr => [a.id, (lr.leases ?? []).length] as const)
+                .catch(() => [a.id, 0] as const)
+            )).then(entries => setAgentLeases(Object.fromEntries(entries))).catch(() => {})
+          })
           .catch(() => setAgents([]))
           .finally(() => setLoading(false))
       } else {
         setAgents([])
+        setAgentLeases({})
         setLoading(false)
       }
     }
@@ -145,6 +157,7 @@ export default function AgentsPage() {
                 <th className="text-left px-4 py-2 font-medium">Name</th>
                 <th className="text-left px-4 py-2 font-medium">Type</th>
                 <th className="text-left px-4 py-2 font-medium">Status</th>
+                <th className="text-left px-4 py-2 font-medium">Leases</th>
                 <th className="text-left px-4 py-2 font-medium">Created</th>
                 <th className="px-4 py-2" />
               </tr>
@@ -159,6 +172,12 @@ export default function AgentsPage() {
                   <td className="px-4 py-2">
                     <span className={cn('px-2 py-0.5 rounded-full text-xs', agent.status === 'active' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' : 'bg-muted text-muted-foreground')}>
                       {agent.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2">
+                    {/* mapping #6: agent → active leases */}
+                    <span className={cn('px-2 py-0.5 rounded-full text-xs font-medium', (agentLeases[agent.id] ?? 0) > 0 ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'bg-muted text-muted-foreground')}>
+                      {agentLeases[agent.id] ?? 0} active
                     </span>
                   </td>
                   <td className="px-4 py-2 text-muted-foreground">{new Date(agent.created_at).toLocaleDateString()}</td>

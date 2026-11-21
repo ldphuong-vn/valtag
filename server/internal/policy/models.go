@@ -14,6 +14,10 @@ type Template struct {
 	CreatedBy          *string          `json:"created_by,omitempty"`
 	CreatedAt          time.Time        `json:"created_at"`
 	UpdatedAt          time.Time        `json:"updated_at"`
+	// Mapping visibility (2026-11-21): how many secrets bind this template
+	// and their names — the policy ↔ secret relation made visible.
+	BoundCount   int    `json:"bound_count"`
+	BoundSecrets string `json:"bound_secrets,omitempty"`
 }
 
 type TemplateVersion struct {

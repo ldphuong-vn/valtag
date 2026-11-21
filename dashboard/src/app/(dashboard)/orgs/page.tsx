@@ -147,9 +147,20 @@ export default function OrgsPage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <h3 className="text-base font-medium truncate">{org.name}</h3>
-                  <div className="flex items-center gap-2 mt-0.5">
+                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                     <p className="text-xs text-muted-foreground font-mono bg-muted px-1.5 py-0.5 rounded">{org.slug}</p>
                     <span className="text-xs text-muted-foreground capitalize border px-1.5 py-0.5 rounded-full">{org.plan}</span>
+                    {/* org → workspace → project counts (mapping #7) */}
+                    {typeof org.workspace_count === 'number' && (
+                      <span className="text-xs text-muted-foreground border px-1.5 py-0.5 rounded-full">
+                        {org.workspace_count} workspace{org.workspace_count === 1 ? '' : 's'}
+                      </span>
+                    )}
+                    {typeof org.project_count === 'number' && (
+                      <span className="text-xs text-muted-foreground border px-1.5 py-0.5 rounded-full">
+                        {org.project_count} project{org.project_count === 1 ? '' : 's'}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <Link

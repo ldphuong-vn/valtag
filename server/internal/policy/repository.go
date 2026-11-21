@@ -132,6 +132,8 @@ func scanTemplate(row rowScanner) (Template, error) {
 		&t.UpdatedAt,
 		&t.CurrentVersion,
 		&paramsRaw,
+		&t.BoundCount,
+		&t.BoundSecrets,
 	)
 	if err != nil {
 		return Template{}, err
@@ -246,7 +248,11 @@ func (r *Repository) AgentInProject(ctx context.Context, agentID, projectID stri
 func (r *Repository) ListTemplates(ctx context.Context, projectID string) ([]Template, error) {
 	rows, err := r.pool.Query(ctx, `
 		SELECT t.id, t.project_id, t.name, t.description, t.is_system, t.base_credential_type,
-		       t.created_by, t.created_at, t.updated_at, v.version, v.parameters
+		       t.created_by, t.created_at, t.updated_at, v.version, v.parameters,
+		       (SELECT count(*) FROM secret_policy_bindings b WHERE b.template_id = t.id) AS bound_count,
+		       COALESCE((SELECT string_agg(s.name, ', ')
+		                 FROM secret_policy_bindings b JOIN secrets s ON s.id = b.secret_id
+		                 WHERE b.template_id = t.id), '') AS bound_secrets
 		FROM policy_templates t
 		JOIN LATERAL (
 			SELECT version, parameters
@@ -276,7 +282,11 @@ func (r *Repository) ListTemplates(ctx context.Context, projectID string) ([]Tem
 func (r *Repository) GetTemplate(ctx context.Context, templateID string) (*Template, error) {
 	row := r.pool.QueryRow(ctx, `
 		SELECT t.id, t.project_id, t.name, t.description, t.is_system, t.base_credential_type,
-		       t.created_by, t.created_at, t.updated_at, v.version, v.parameters
+		       t.created_by, t.created_at, t.updated_at, v.version, v.parameters,
+		       (SELECT count(*) FROM secret_policy_bindings b WHERE b.template_id = t.id) AS bound_count,
+		       COALESCE((SELECT string_agg(s.name, ', ')
+		                 FROM secret_policy_bindings b JOIN secrets s ON s.id = b.secret_id
+		                 WHERE b.template_id = t.id), '') AS bound_secrets
 		FROM policy_templates t
 		JOIN LATERAL (
 			SELECT version, parameters

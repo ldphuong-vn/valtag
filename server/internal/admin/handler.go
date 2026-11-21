@@ -2,6 +2,7 @@ package admin
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -116,6 +117,10 @@ type userRow struct {
 	TOTPEnabled   bool   `json:"totp_enabled"`
 	Role          string `json:"role"`
 	CreatedAt     string `json:"created_at"`
+	// Mapping visibility (2026-11-21): which orgs this user belongs to
+	// (through org_memberships), comma-joined — the user ↔ org relation
+	// made visible next to the user count in the stats.
+	Orgs string `json:"orgs"`
 }
 
 // ListUsers returns paginated users, optionally filtered by email search.
@@ -132,6 +137,10 @@ func (h *Handler) ListUsers(w http.ResponseWriter, r *http.Request) {
 	search := r.URL.Query().Get("search")
 	offset := (page - 1) * limit
 
+	orgsSub := `COALESCE((SELECT string_agg(o.name, ', ' ORDER BY o.name)
+	       FROM org_memberships om JOIN organizations o ON o.id = om.org_id
+	       WHERE om.user_id = users.id), '')`
+
 	var (
 		rows pgxRows
 		err  error
@@ -139,7 +148,8 @@ func (h *Handler) ListUsers(w http.ResponseWriter, r *http.Request) {
 	if search != "" {
 		rows, err = h.pool.Query(ctx, `
 			SELECT id, email, COALESCE(status, 'active'), COALESCE(email_verified, false),
-			       COALESCE(totp_enabled, false), COALESCE(role, 'user'), created_at
+			       COALESCE(totp_enabled, false), COALESCE(role, 'user'), created_at,
+			       `+orgsSub+` AS orgs
 			FROM users
 			WHERE email ILIKE '%' || $1 || '%'
 			ORDER BY created_at DESC
@@ -148,7 +158,8 @@ func (h *Handler) ListUsers(w http.ResponseWriter, r *http.Request) {
 	} else {
 		rows, err = h.pool.Query(ctx, `
 			SELECT id, email, COALESCE(status, 'active'), COALESCE(email_verified, false),
-			       COALESCE(totp_enabled, false), COALESCE(role, 'user'), created_at
+			       COALESCE(totp_enabled, false), COALESCE(role, 'user'), created_at,
+			       `+orgsSub+` AS orgs
 			FROM users
 			ORDER BY created_at DESC
 			LIMIT $1 OFFSET $2
@@ -164,7 +175,8 @@ func (h *Handler) ListUsers(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var u userRow
 		var createdAt time.Time
-		if err := rows.Scan(&u.ID, &u.Email, &u.Status, &u.EmailVerified, &u.TOTPEnabled, &u.Role, &createdAt); err != nil {
+		if err := rows.Scan(&u.ID, &u.Email, &u.Status, &u.EmailVerified, &u.TOTPEnabled, &u.Role, &createdAt, &u.Orgs); err != nil {
+			log.Printf("ListUsers scan failed (row skipped): %v", err)
 			continue
 		}
 		u.CreatedAt = createdAt.UTC().Format(time.RFC3339)

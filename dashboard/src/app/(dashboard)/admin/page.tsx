@@ -260,11 +260,11 @@ export default function AdminPage() {
         </div>
         <div className="rounded-lg border overflow-hidden">
           <table className="w-full text-sm">
-            <TableHead cols={['Email', 'Role', 'Status', 'Verified', '2FA', 'Joined']} />
+            <TableHead cols={['Email', 'Role', 'Status', 'Verified', '2FA', 'Orgs', 'Joined']} />
             <tbody>
               {users.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-3 py-6 text-center text-muted-foreground text-sm">
+                  <td colSpan={7} className="px-3 py-6 text-center text-muted-foreground text-sm">
                     No users found.
                   </td>
                 </tr>
@@ -286,6 +286,7 @@ export default function AdminPage() {
                   <td className="px-3 py-2.5">
                     <Badge label={u.totp_enabled ? 'on' : 'off'} variant={u.totp_enabled ? 'green' : 'default'} />
                   </td>
+                  <td className="px-3 py-2.5 text-xs text-muted-foreground max-w-[200px] truncate">{u.orgs || '—'}</td>
                   <td className="px-3 py-2.5 text-muted-foreground">{formatDate(u.created_at)}</td>
                 </tr>
               ))}

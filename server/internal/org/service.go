@@ -25,6 +25,10 @@ type Org struct {
 	Plan      string    `json:"plan"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+	// Mapping visibility (2026-11-21): the org → workspace → project chain
+	// made countable, so the org list shows what's inside without a click.
+	WorkspaceCount int `json:"workspace_count"`
+	ProjectCount   int `json:"project_count"`
 }
 
 type Member struct {
@@ -101,7 +105,11 @@ func (s *Service) UpdateName(ctx context.Context, orgID, name string) error {
 // ListByUser returns all orgs the user is a member of.
 func (s *Service) ListByUser(ctx context.Context, userID string) ([]Org, error) {
 	rows, err := s.pool.Query(ctx,
-		`SELECT o.id, o.name, o.slug, o.owner_id, o.plan, o.created_at, o.updated_at
+		`SELECT o.id, o.name, o.slug, o.owner_id, o.plan, o.created_at, o.updated_at,
+		        (SELECT count(*) FROM workspaces w WHERE w.org_id = o.id) AS workspace_count,
+		        (SELECT count(*) FROM projects pj
+		         JOIN workspaces w2 ON w2.id = pj.workspace_id
+		         WHERE w2.org_id = o.id) AS project_count
 		 FROM organizations o
 		 JOIN org_memberships m ON m.org_id = o.id
 		 WHERE m.user_id = $1
@@ -116,7 +124,8 @@ func (s *Service) ListByUser(ctx context.Context, userID string) ([]Org, error) 
 	var orgs []Org
 	for rows.Next() {
 		var o Org
-		if err := rows.Scan(&o.ID, &o.Name, &o.Slug, &o.OwnerID, &o.Plan, &o.CreatedAt, &o.UpdatedAt); err != nil {
+		if err := rows.Scan(&o.ID, &o.Name, &o.Slug, &o.OwnerID, &o.Plan, &o.CreatedAt, &o.UpdatedAt,
+			&o.WorkspaceCount, &o.ProjectCount); err != nil {
 			return nil, fmt.Errorf("scanning org: %w", err)
 		}
 		orgs = append(orgs, o)

@@ -83,6 +83,9 @@ export interface Organization {
   plan: string
   created_at: string
   updated_at: string
+  // mapping visibility: org → workspace → project chain (2026-11-21)
+  workspace_count?: number
+  project_count?: number
 }
 
 export interface Workspace {
